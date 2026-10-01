@@ -1,0 +1,1738 @@
+<title>پاسور حکم</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lalezar&family=Vazirmatn:wght@400;500;700;800&display=swap">
+<style>
+/* Layout: one phone-shaped column — score bar, partner, carpet medallion flanked by opponents, your hand. */
+:root {
+  --lapis: #0E1A33;      /* night lapis ground */
+  --lapis-2: #16264A;    /* panels */
+  --lapis-3: #1E3260;    /* raised */
+  --line: #2A3B63;
+  --felt: #132B4F;       /* medallion */
+  --turq: #2EC4B6;       /* our team, actions */
+  --turq-ink: #0B1630;
+  --gold: #E0B45C;       /* opponents, hakem, ornament */
+  --paper: #F7F0E1;      /* card face */
+  --ink: #1B1B1F;
+  --gold-deep: #8A5A12;  /* court ranks on paper */
+  --red: #B42318;        /* red suit on paper */
+  --red-dark: #FF7A6B;   /* red suit on dark */
+  --text: #F3EBDD;
+  --muted: #A9B4CC;
+  --scrim: rgba(6, 12, 26, 0.76);
+  --display: "Lalezar", "Vazirmatn", Tahoma, sans-serif;
+  --body: "Vazirmatn", Tahoma, "Segoe UI", sans-serif;
+  --cw: clamp(46px, 15.2vw, 68px);   /* hand card width */
+  --tw: clamp(42px, 12.6vw, 58px);   /* table card width */
+  color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html { height: 100%; box-sizing: border-box; background: var(--lapis); }
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  height: 100%; margin: 0; overflow: hidden;
+  background: var(--lapis); color: var(--text);
+  font-family: var(--body); font-size: 15px; line-height: 1.6;
+  -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none;
+}
+body::before {
+  content: ""; position: fixed; inset: 0; pointer-events: none; opacity: 0.09;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56'%3E%3Cpath d='M16 16H40V40H16Z M28 11L45 28L28 45L11 28Z' fill='none' stroke='%23E0B45C' stroke-width='1.2'/%3E%3C/svg%3E");
+}
+button { font-family: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
+.app { position: relative; height: 100%; max-width: 480px; margin: 0 auto; }
+.screen { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 12px 16px; }
+
+/* ---------- shared controls ---------- */
+.btn { height: 54px; border: 0; border-radius: 16px; font-size: 17px; font-weight: 700; padding: 0 18px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.btn.primary { background: var(--turq); color: var(--turq-ink); font-weight: 800; }
+.btn.primary:disabled { background: var(--line); color: var(--muted); cursor: default; }
+.btn.ghost { background: transparent; color: var(--gold); box-shadow: inset 0 0 0 1.5px var(--gold); }
+.btn.soft { background: var(--lapis-2); color: var(--text); font-weight: 500; }
+.btn svg, .icon-btn svg { width: 20px; height: 20px; flex: none; }
+.icon-btn { width: 44px; height: 44px; flex: none; border: 0; border-radius: 12px; background: var(--lapis-2); display: flex; align-items: center; justify-content: center; }
+.seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding: 5px; border-radius: 14px; background: var(--lapis-2); }
+.seg.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.seg button { height: 44px; border: 0; border-radius: 10px; background: transparent; color: var(--muted); font-size: 15px; }
+.seg button[aria-pressed="true"] { background: var(--lapis-3); color: var(--turq); font-weight: 800; box-shadow: inset 0 0 0 1.5px var(--turq); }
+.label { font-size: 13px; color: var(--muted); }
+
+/* ---------- cards ---------- */
+.card {
+  position: relative; width: var(--cw); height: calc(var(--cw) * 1.42); flex: none;
+  border: 0; padding: 0; border-radius: 9px; background: var(--paper); color: var(--ink);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3); direction: ltr; font-family: var(--body);
+}
+.card.red { color: var(--red); }
+.card .ci { position: absolute; top: 5%; left: 9%; display: flex; flex-direction: column; align-items: center; line-height: 1; }
+.card .ci b { font-size: calc(var(--w, var(--cw)) * 0.27); font-weight: 800; letter-spacing: -0.04em; }
+.card .ci i { font-style: normal; font-size: calc(var(--w, var(--cw)) * 0.22); }
+.card .cs { position: absolute; right: 9%; bottom: 5%; line-height: 1; font-size: calc(var(--w, var(--cw)) * 0.56); }
+.card.court .ci b { color: var(--gold-deep); }
+.card.back { background: var(--lapis-3); box-shadow: inset 0 0 0 3px var(--paper), 0 3px 0 rgba(0, 0, 0, 0.3); display: flex; align-items: center; justify-content: center; }
+.card.back::after { content: ""; width: 55%; height: 55%; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Cpath d='M16 16H40V40H16Z M28 11L45 28L28 45L11 28Z' fill='none' stroke='%23E0B45C' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat; }
+
+/* ---------- home ---------- */
+.home { align-items: center; gap: 18px; padding-block: 40px 24px; overflow-y: auto; }
+.home h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(72px, 24vw, 104px); line-height: 1; color: var(--gold); }
+.home .tag { margin: 0; color: var(--muted); font-size: 15px; }
+.fan { position: relative; width: 240px; height: 170px; flex: none; }
+.fan .card { position: absolute; --cw: 78px; top: 22px; transform-origin: 50% 100%; }
+.fan .card:nth-child(1) { left: 40px; transform: rotate(-15deg); }
+.fan .card:nth-child(2) { left: 122px; transform: rotate(15deg); }
+.fan .card:nth-child(3) { left: 81px; top: 6px; }
+.home .actions { width: 100%; display: flex; flex-direction: column; gap: 12px; margin-top: auto; }
+.home .row { display: flex; gap: 12px; }
+.home .row .btn { flex: 1; }
+.home .level { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+
+/* ---------- game ---------- */
+.game { display: grid; grid-template-rows: auto auto auto minmax(0, 1fr) auto auto auto; gap: 6px; padding: 10px 12px 10px; }
+.hud { display: flex; align-items: center; gap: 8px; }
+.score { flex: 1; height: 62px; border-radius: 16px; background: var(--lapis-2); display: flex; align-items: center; justify-content: space-around; padding: 0 8px; font-variant-numeric: tabular-nums; }
+.team { display: flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.team .lbl, .score .mid { font-size: 12px; color: var(--muted); }
+.team .tr { font-size: 27px; font-weight: 800; }
+.team.us .tr { color: var(--turq); }
+.team.them .tr { color: var(--gold); }
+.team .pt { font-size: 11px; color: var(--muted); }
+.score .mid { display: flex; flex-direction: column; align-items: center; line-height: 1.4; }
+.bump { animation: bump 0.45s ease-out; }
+@keyframes bump { 40% { transform: scale(1.35); } }
+.hokm-row { display: flex; justify-content: center; }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 14px; border-radius: 16px; box-shadow: inset 0 0 0 1.5px var(--gold); color: var(--gold); font-size: 14px; font-weight: 700; background: var(--lapis); white-space: nowrap; }
+.chip .sym { font-size: 18px; color: var(--text); }
+.chip .sym.r { color: var(--red-dark); }
+.chip .hk { color: var(--muted); font-weight: 500; font-size: 12px; }
+.chip .sep { width: 1px; height: 16px; background: var(--line); margin: 0 4px; }
+
+.seat { display: flex; align-items: center; gap: 8px; }
+.seat .av { position: relative; width: 44px; height: 44px; flex: none; border-radius: 50%; background: var(--lapis-3); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 17px; box-shadow: 0 0 0 2px var(--gold); transition: box-shadow 0.2s; }
+.seat.mate .av { box-shadow: 0 0 0 2px var(--turq); }
+.seat.turn .av { box-shadow: 0 0 0 3px var(--turq), 0 0 0 7px rgba(46, 196, 182, 0.25); animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 3px var(--turq), 0 0 0 10px rgba(46, 196, 182, 0.08); } }
+.seat .crown { position: absolute; top: -13px; left: 50%; width: 20px; height: 20px; margin-left: -10px; color: var(--gold); display: none; }
+.seat.hakem .crown { display: block; }
+.seat .nm { font-size: 13px; font-weight: 700; line-height: 1.3; }
+.seat .sub { font-size: 11px; color: var(--muted); line-height: 1.3; }
+.seat.turn .sub::after { content: "در حال فکر…"; display: block; color: var(--turq); }
+.seat.turn.you .sub::after { content: ""; }
+.seat-top { justify-content: center; padding-top: 10px; }
+.seat-side { flex-direction: column; text-align: center; gap: 4px; padding-top: 10px; }
+.middle { display: grid; grid-template-columns: 58px minmax(0, 1fr) 58px; grid-template-rows: minmax(0, 1fr); align-items: center; gap: 6px; min-height: 0; direction: ltr; }
+.middle > * { direction: rtl; }
+.board { position: relative; justify-self: center; width: 100%; max-width: 270px; height: 100%; max-height: 320px; min-height: 196px; border-radius: 24px; background: var(--felt); box-shadow: inset 0 0 0 2px var(--gold); padding: 7px; }
+.board-inner { position: relative; width: 100%; height: 100%; border-radius: 17px; box-shadow: inset 0 0 0 1px rgba(46, 196, 182, 0.5); }
+.board-inner::before { content: ""; position: absolute; left: 50%; top: 50%; width: 46%; aspect-ratio: 1; max-width: 100%; transform: translate(-50%, -50%); opacity: 0.18; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Cpath d='M16 16H40V40H16Z M28 11L45 28L28 45L11 28Z' fill='none' stroke='%23E0B45C' stroke-width='1.4'/%3E%3Ccircle cx='28' cy='28' r='6' fill='none' stroke='%232EC4B6' stroke-width='1.2'/%3E%3C/svg%3E") center / contain no-repeat; }
+.slot { position: absolute; width: var(--tw); height: calc(var(--tw) * 1.42); --cw: var(--tw); }
+.slot .card { --w: var(--tw); }
+.s2 { top: 5%; left: 50%; margin-left: calc(var(--tw) / -2); }
+.s0 { bottom: 5%; left: 50%; margin-left: calc(var(--tw) / -2); }
+.s1 { right: 5%; top: 50%; margin-top: calc(var(--tw) * -0.71); }
+.s3 { left: 5%; top: 50%; margin-top: calc(var(--tw) * -0.71); }
+.s0.empty-turn { border-radius: 9px; box-shadow: inset 0 0 0 1.5px rgba(46, 196, 182, 0.7); }
+.slot .card.from-0 { animation: in0 0.3s ease-out; }
+.slot .card.from-1 { animation: in1 0.3s ease-out; }
+.slot .card.from-2 { animation: in2 0.3s ease-out; }
+.slot .card.from-3 { animation: in3 0.3s ease-out; }
+@keyframes in0 { from { transform: translateY(150px) scale(1.15); opacity: 0.3; } }
+@keyframes in1 { from { transform: translateX(110px) rotate(14deg); opacity: 0; } }
+@keyframes in2 { from { transform: translateY(-110px); opacity: 0; } }
+@keyframes in3 { from { transform: translateX(-110px) rotate(-14deg); opacity: 0; } }
+.slot .card.win { box-shadow: 0 0 0 3px var(--gold), 0 8px 18px rgba(0, 0, 0, 0.45); z-index: 2; }
+.board-inner .slot .card { transition: transform 0.45s ease-in, opacity 0.45s ease-in; }
+.board-inner.to-0 .slot .card { transform: translateY(170px) scale(0.6); opacity: 0; }
+.board-inner.to-1 .slot .card { transform: translateX(150px) scale(0.6); opacity: 0; }
+.board-inner.to-2 .slot .card { transform: translateY(-170px) scale(0.6); opacity: 0; }
+.board-inner.to-3 .slot .card { transform: translateX(-150px) scale(0.6); opacity: 0; }
+.board-msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 0 18px; pointer-events: none; z-index: 3; }
+.board-msg span { background: rgba(14, 26, 51, 0.92); box-shadow: inset 0 0 0 1.5px var(--gold); border-radius: 14px; padding: 8px 14px; font-size: 15px; font-weight: 700; line-height: 1.5; animation: pop 0.25s ease-out; }
+.board-msg span em { display: block; font-style: normal; font-family: var(--display); font-weight: 400; font-size: 30px; color: var(--gold); line-height: 1.2; }
+@keyframes pop { from { transform: scale(0.85); opacity: 0; } }
+
+.turn-row { display: flex; justify-content: center; min-height: 32px; }
+.pill { height: 32px; padding: 0 16px; border-radius: 16px; background: var(--turq); color: var(--turq-ink); font-size: 14px; font-weight: 800; display: flex; align-items: center; animation: pop 0.2s ease-out; }
+.hand { position: relative; height: calc(var(--cw) * 1.42 + 18px); direction: ltr; }
+.hand .card { position: absolute; top: 16px; transition: top 0.15s ease-out, filter 0.15s, left 0.25s ease-out; }
+.hand .card.legal { top: 2px; }
+.hand.active .card:not(.legal) { filter: brightness(0.55) saturate(0.6); }
+.hand .card.sel { top: -8px; box-shadow: 0 0 0 3px var(--gold), 0 3px 0 rgba(0, 0, 0, 0.3); }
+.hand .card.deal { animation: dealIn 0.32s ease-out backwards; }
+@keyframes dealIn { from { transform: translateY(-60px) rotate(-6deg); opacity: 0; } }
+.hand .card.nope { animation: nope 0.3s; }
+@keyframes nope { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+.me-bar { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; font-weight: 700; min-height: 26px; }
+.me-bar svg { width: 18px; height: 18px; color: var(--gold); }
+.me-bar .hk { font-size: 12px; color: var(--gold); font-weight: 500; }
+
+/* ---------- overlays ---------- */
+.overlay { position: absolute; inset: 0; z-index: 20; background: var(--scrim); display: flex; padding: 16px; overflow-y: auto; }
+.sheet { margin: auto; width: 100%; max-width: 420px; background: var(--lapis-2); border-radius: 24px; box-shadow: inset 0 0 0 1.5px var(--gold); padding: 20px 18px; display: flex; flex-direction: column; gap: 14px; animation: pop 0.22s ease-out; }
+.sheet h2 { margin: 0; font-family: var(--display); font-weight: 400; color: var(--gold); line-height: 1.15; text-wrap: balance; }
+.hokm-sheet .head { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--gold); }
+.hokm-sheet .head svg { width: 26px; height: 26px; }
+.hokm-sheet h2 { font-size: 32px; }
+.hokm-sheet .sub { margin: -8px 0 0; text-align: center; font-size: 14px; color: var(--muted); }
+.five { display: flex; justify-content: center; gap: 6px; direction: ltr; --cw: clamp(48px, 14vw, 62px); }
+.panel { border-radius: 18px; background: var(--lapis); padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.panel h3 { margin: 0; font-size: 15px; font-weight: 700; }
+.suit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.suit-grid button { height: 60px; border: 0; border-radius: 14px; background: var(--paper); color: var(--ink); display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 17px; font-weight: 700; }
+.suit-grid button span { font-size: 28px; }
+.suit-grid button span.r { color: var(--red); }
+.suit-grid button[aria-pressed="true"], .nt-grid button[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--turq); }
+.divider { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; }
+.divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.nt-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.nt-grid button { height: 70px; border: 0; border-radius: 14px; background: transparent; box-shadow: inset 0 0 0 1.5px var(--gold); color: var(--gold); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.nt-grid button[aria-pressed="true"] { background: var(--lapis-3); box-shadow: inset 0 0 0 1.5px var(--gold), 0 0 0 3px var(--turq); }
+.nt-grid b { font-size: 17px; font-weight: 800; }
+.nt-grid small { font-size: 12px; color: #C9D1E3; direction: ltr; }
+.hint { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.7; }
+
+.result { align-items: center; text-align: center; }
+.medal { position: relative; width: 140px; height: 140px; display: flex; align-items: center; justify-content: center; }
+.medal svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.medal span { position: relative; font-family: var(--display); font-size: 34px; line-height: 1; color: var(--gold); white-space: nowrap; }
+.result.lost .medal span { color: var(--muted); }
+.result p { margin: 0; font-size: 16px; }
+.tally { display: flex; align-items: center; justify-content: center; gap: 22px; font-variant-numeric: tabular-nums; }
+.tally div { display: flex; flex-direction: column; align-items: center; line-height: 1.1; }
+.tally small { font-size: 13px; color: var(--muted); }
+.tally b { font-size: 40px; font-weight: 800; }
+.tally .us b { color: var(--turq); }
+.tally .them b { color: var(--gold); }
+.gain { height: 34px; padding: 0 16px; border-radius: 17px; background: var(--turq); color: var(--turq-ink); font-weight: 800; display: flex; align-items: center; }
+.result.lost .gain { background: transparent; color: var(--gold); box-shadow: inset 0 0 0 1.5px var(--gold); }
+.pips { width: 100%; display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); text-align: right; }
+.pips .row { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.pips .row > span:first-child { width: 40px; }
+.pips .dots { display: flex; flex-wrap: wrap; gap: 5px; flex: 1; }
+.pips .dots i { width: 16px; height: 16px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px #4A5B83; }
+.pips .us i.on { background: var(--turq); box-shadow: none; }
+.pips .them i.on { background: var(--gold); box-shadow: none; }
+.pips .row b { font-size: 15px; }
+.pips .us b { color: var(--turq); }
+.pips .them b { color: var(--gold); }
+.btn-row { width: 100%; display: flex; gap: 10px; }
+.btn-row .btn { flex: 1; }
+.btn-row .btn.primary { flex: 2; }
+.menu-sheet { gap: 10px; }
+.menu-sheet h2 { font-size: 28px; text-align: center; }
+.menu-sheet .btn { width: 100%; }
+.last-sheet h2 { font-size: 26px; text-align: center; }
+.last-cards { display: flex; justify-content: center; gap: 8px; direction: ltr; --cw: clamp(50px, 15vw, 62px); }
+.last-cards figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
+.last-cards figure.win .card { box-shadow: 0 0 0 3px var(--gold); }
+.last-cards figure.win figcaption { color: var(--gold); font-weight: 700; }
+
+/* ---------- settings & rules ---------- */
+.page { gap: 12px; overflow-y: auto; padding-block: 14px 24px; }
+.page-head { display: flex; align-items: center; gap: 10px; }
+.page-head h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 30px; color: var(--gold); }
+.group { border-radius: 18px; background: var(--lapis-2); padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; flex: none; }
+.group h2 { margin: 0; font-size: 14px; font-weight: 700; color: var(--muted); }
+.group .seg { background: var(--lapis); }
+.opt { display: flex; align-items: center; gap: 12px; min-height: 56px; }
+.opt + .opt { border-top: 1px solid var(--line); }
+.opt .txt { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.opt .txt b { font-size: 16px; }
+.opt .txt small { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.switch { width: 58px; height: 44px; border: 0; background: transparent; padding: 0; display: flex; align-items: center; justify-content: center; flex: none; }
+.switch span { position: relative; display: block; width: 52px; height: 30px; border-radius: 15px; background: var(--line); transition: background 0.2s; }
+.switch span::after { content: ""; position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; background: var(--muted); transition: right 0.2s, background 0.2s; }
+.switch[aria-checked="true"] span { background: var(--turq); }
+.switch[aria-checked="true"] span::after { right: 26px; background: var(--lapis); }
+.stepper { display: flex; align-items: center; gap: 6px; }
+.stepper button { width: 44px; height: 44px; border: 0; border-radius: 12px; background: var(--lapis); font-size: 22px; }
+.stepper output { width: 34px; text-align: center; font-size: 20px; font-weight: 800; color: var(--turq); font-variant-numeric: tabular-nums; }
+.note { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.7; }
+.rules .group p, .rules .group li { margin: 0; font-size: 14px; line-height: 1.9; }
+.rules .group ul { margin: 0; padding-right: 18px; display: flex; flex-direction: column; gap: 4px; }
+.rules .order { direction: ltr; display: inline-block; font-weight: 700; color: var(--gold); }
+
+@media (max-height: 680px) {
+  .hokm-sheet { gap: 10px; padding: 14px; }
+  .hokm-sheet h2 { font-size: 26px; }
+  .five { --cw: 46px; }
+  .suit-grid button { height: 50px; }
+  .nt-grid button { height: 60px; }
+  .home { gap: 12px; padding-block: 24px 16px; }
+  .fan { transform: scale(0.8); margin: -16px 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+
+<div class="app" id="app" dir="rtl" lang="fa">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-crown" viewBox="0 0 24 24"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-last" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 2"/></g></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></g></symbol>
+    <symbol id="i-star" viewBox="0 0 56 56"><path d="M16 16H40V40H16Z M28 11L45 28L28 45L11 28Z" fill="#1E3260" stroke="#E0B45C" stroke-width="1.2" stroke-linejoin="round"/></symbol>
+  </svg>
+
+  <!-- HOME -->
+  <section class="screen home" id="home">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+      <h1>حکم</h1>
+      <p class="tag">پاسور ایرانی با یار و حریف هوشمند</p>
+    </div>
+    <div class="fan" aria-hidden="true" id="fan"></div>
+    <div class="actions">
+      <button class="btn primary" id="btnNew" type="button">بازی جدید</button>
+      <button class="btn ghost" id="btnContinue" type="button" hidden>ادامهٔ بازی قبلی</button>
+      <div class="row">
+        <button class="btn soft" type="button" data-go="settings"><svg aria-hidden="true"><use href="#i-gear"/></svg>تنظیمات</button>
+        <button class="btn soft" type="button" data-go="rules"><svg aria-hidden="true"><use href="#i-book"/></svg>قوانین</button>
+      </div>
+    </div>
+    <div class="level">
+      <span class="label" id="lvlLabel">سطح بازیکن‌های کامپیوتر</span>
+      <div class="seg" role="group" aria-labelledby="lvlLabel" data-set="difficulty">
+        <button type="button" data-val="easy">آسان</button>
+        <button type="button" data-val="medium">متوسط</button>
+        <button type="button" data-val="hard">حرفه‌ای</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- GAME -->
+  <section class="screen game" id="game" hidden>
+    <header class="hud">
+      <button class="icon-btn" id="btnMenu" type="button" aria-label="منو"><svg aria-hidden="true"><use href="#i-menu"/></svg></button>
+      <div class="score" aria-live="polite">
+        <div class="team us"><span class="lbl">ما</span><span class="tr" id="trUs">۰</span><span class="pt" id="ptUs">امتیاز ۰</span></div>
+        <div class="mid"><span>دست‌ها</span><span>از ۷</span></div>
+        <div class="team them"><span class="lbl">حریف</span><span class="tr" id="trThem">۰</span><span class="pt" id="ptThem">امتیاز ۰</span></div>
+      </div>
+      <button class="icon-btn" id="btnLast" type="button" aria-label="دست قبل"><svg aria-hidden="true"><use href="#i-last"/></svg></button>
+    </header>
+    <div class="hokm-row"><div class="chip" id="hokmChip" aria-live="polite"></div></div>
+    <div class="seat seat-top mate" id="seat2"></div>
+    <div class="middle">
+      <div class="seat seat-side" id="seat3"></div>
+      <div class="board"><div class="board-inner" id="boardInner">
+        <div class="slot s2" id="slot2"></div><div class="slot s1" id="slot1"></div>
+        <div class="slot s3" id="slot3"></div><div class="slot s0" id="slot0"></div>
+        <div class="board-msg" id="boardMsg" aria-live="polite"></div>
+      </div></div>
+      <div class="seat seat-side" id="seat1"></div>
+    </div>
+    <div class="turn-row"><div class="pill" id="turnPill" hidden></div></div>
+    <div class="hand" id="hand" aria-label="برگ‌های شما"></div>
+    <div class="me-bar seat you" id="seat0"></div>
+
+    <div class="overlay" id="hokmOverlay" hidden>
+      <div class="sheet hokm-sheet" role="dialog" aria-modal="true" aria-labelledby="hokmTitle">
+        <div class="head"><svg aria-hidden="true"><use href="#i-crown"/></svg><h2 id="hokmTitle">شما حاکم شدید</h2></div>
+        <p class="sub">با همین پنج برگ، حکم را انتخاب کنید</p>
+        <div class="five" id="fiveCards"></div>
+        <div class="panel">
+          <h3>خال حکم</h3>
+          <div class="suit-grid" id="suitGrid"></div>
+          <div class="divider" id="ntDivider">بی‌حکم، بدون برش</div>
+          <div class="nt-grid" id="ntGrid"></div>
+          <p class="hint" id="ntHint">در سرس، نرس و تک‌نرس هیچ خالی حکم نیست؛ فقط بالاترین برگِ خالِ زمین دست را می‌برد.</p>
+        </div>
+        <button class="btn primary" id="hokmConfirm" type="button" disabled>یک حکم انتخاب کنید</button>
+      </div>
+    </div>
+
+    <div class="overlay" id="resultOverlay" hidden>
+      <div class="sheet result" id="resultSheet" role="dialog" aria-modal="true" aria-labelledby="resTitle">
+        <div class="medal"><svg aria-hidden="true" viewBox="0 0 56 56"><use href="#i-star"/></svg><span id="resTitle"></span></div>
+        <p id="resLine"></p>
+        <div class="tally"><div class="us"><small>ما</small><b id="resUs"></b></div><span class="label">–</span><div class="them"><small>حریف</small><b id="resThem"></b></div></div>
+        <div class="gain" id="resGain"></div>
+        <div class="pips" id="resPips"></div>
+        <div class="btn-row">
+          <button class="btn primary" id="resNext" type="button">دست بعد</button>
+          <button class="btn ghost" id="resHome" type="button">منو</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay" id="menuOverlay" hidden>
+      <div class="sheet menu-sheet" role="dialog" aria-modal="true" aria-labelledby="menuTitle">
+        <h2 id="menuTitle">مکث</h2>
+        <button class="btn primary" type="button" data-menu="resume">ادامهٔ بازی</button>
+        <button class="btn soft" type="button" data-menu="settings"><svg aria-hidden="true"><use href="#i-gear"/></svg>تنظیمات</button>
+        <button class="btn soft" type="button" data-menu="rules"><svg aria-hidden="true"><use href="#i-book"/></svg>قوانین</button>
+        <button class="btn ghost" type="button" data-menu="new">شروع بازی جدید</button>
+        <button class="btn soft" type="button" data-menu="home">خروج به صفحهٔ اصلی</button>
+      </div>
+    </div>
+
+    <div class="overlay" id="lastOverlay" hidden>
+      <div class="sheet last-sheet" role="dialog" aria-modal="true" aria-labelledby="lastTitle">
+        <h2 id="lastTitle">دست قبل</h2>
+        <div class="last-cards" id="lastCards"></div>
+        <button class="btn primary" type="button" id="lastClose">بستن</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="screen page" id="settings" hidden>
+    <div class="page-head">
+      <button class="icon-btn" type="button" data-back aria-label="بازگشت"><svg aria-hidden="true"><use href="#i-back"/></svg></button>
+      <h1>تنظیمات</h1>
+    </div>
+    <div class="group">
+      <h2 id="sLvl">سطح هوش مصنوعی</h2>
+      <div class="seg" role="group" aria-labelledby="sLvl" data-set="difficulty">
+        <button type="button" data-val="easy">آسان</button>
+        <button type="button" data-val="medium">متوسط</button>
+        <button type="button" data-val="hard">حرفه‌ای</button>
+      </div>
+    </div>
+    <div class="group">
+      <h2>حکم‌های بی‌حکم</h2>
+      <div>
+        <div class="opt"><div class="txt"><b>سرس</b><small>بدون حکم؛ تک بالاترین، ۲ پایین‌ترین</small></div><button class="switch" type="button" role="switch" data-set="saras" aria-label="سرس"><span></span></button></div>
+        <div class="opt"><div class="txt"><b>نرس</b><small>بدون حکم؛ ۲ بالاترین، تک پایین‌ترین</small></div><button class="switch" type="button" role="switch" data-set="naras" aria-label="نرس"><span></span></button></div>
+        <div class="opt"><div class="txt"><b>تک‌نرس</b><small>بدون حکم؛ تک، بعد ۲، ۳ … شاه</small></div><button class="switch" type="button" role="switch" data-set="taknaras" aria-label="تک‌نرس"><span></span></button></div>
+      </div>
+    </div>
+    <div class="group">
+      <h2>امتیاز</h2>
+      <div>
+        <div class="opt"><div class="txt"><b>کوت در بی‌حکم‌ها</b><small>در سرس، نرس و تک‌نرس هم کوت حساب شود</small></div><button class="switch" type="button" role="switch" data-set="kotNT" aria-label="کوت در بی‌حکم‌ها"><span></span></button></div>
+        <div class="opt"><div class="txt"><b>امتیاز پایان بازی</b><small>تیمی که زودتر برسد برنده است</small></div>
+          <div class="stepper"><button type="button" id="tgtMinus" aria-label="کم کردن">−</button><output id="tgtVal">۷</output><button type="button" id="tgtPlus" aria-label="زیاد کردن">+</button></div></div>
+      </div>
+      <p class="note" id="rulesNote">این سه بخش از بازی بعدی اعمال می‌شوند.</p>
+    </div>
+    <div class="group">
+      <h2 id="sSpeed">سرعت بازی</h2>
+      <div class="seg" role="group" aria-labelledby="sSpeed" data-set="speed">
+        <button type="button" data-val="slow">آرام</button>
+        <button type="button" data-val="normal">معمولی</button>
+        <button type="button" data-val="fast">سریع</button>
+      </div>
+    </div>
+    <div class="group">
+      <h2 id="sTap">انداختن برگ</h2>
+      <div class="seg two" role="group" aria-labelledby="sTap" data-set="tap">
+        <button type="button" data-val="single">با یک لمس</button>
+        <button type="button" data-val="double">با دو لمس (مطمئن‌تر)</button>
+      </div>
+      <div class="opt"><div class="txt"><b>صدا</b></div><button class="switch" type="button" role="switch" data-set="sound" aria-label="صدا"><span></span></button></div>
+    </div>
+  </section>
+
+  <!-- RULES -->
+  <section class="screen page rules" id="rules" hidden>
+    <div class="page-head">
+      <button class="icon-btn" type="button" data-back aria-label="بازگشت"><svg aria-hidden="true"><use href="#i-back"/></svg></button>
+      <h1>قوانین حکم</h1>
+    </div>
+    <div class="group"><h2>تیم‌ها و هدف</h2>
+      <p>چهار نفر در دو تیم بازی می‌کنند؛ یار شما روبه‌روی شماست. هر تیمی زودتر هفت دست بگیرد، آن دور را می‌برد. بازی تا رسیدن به امتیاز پایان (پیش‌فرض ۷) ادامه دارد.</p></div>
+    <div class="group"><h2>حاکم و حکم</h2>
+      <p>در دور اول برگ‌ها رو به بالا پخش می‌شوند و اولین کسی که تک بگیرد حاکم است. حاکم پنج برگ اول را می‌بیند و حکم را اعلام می‌کند، بعد بقیهٔ برگ‌ها پخش می‌شود و حاکم دست اول را شروع می‌کند. اگر تیم حاکم ببازد، حاکمی به نفر بعدی (سمت راست حاکم) می‌رسد.</p></div>
+    <div class="group"><h2>بازی هر دست</h2>
+      <ul>
+        <li>باید از خالی که زمین آمده بازی کنید، اگر دارید.</li>
+        <li>اگر آن خال را ندارید، هر برگی می‌توانید بیندازید؛ با برگ حکم می‌توانید ببُرید.</li>
+        <li>بالاترین حکم دست را می‌برد؛ اگر حکمی نیامده باشد، بالاترین برگ خال زمین.</li>
+      </ul></div>
+    <div class="group"><h2>سرس، نرس و تک‌نرس</h2>
+      <ul>
+        <li>در این سه حالت هیچ خالی حکم نیست و بریدن نداریم.</li>
+        <li>سرس: <span class="order">A › K › Q › … › 2</span></li>
+        <li>نرس: <span class="order">2 › 3 › 4 › … › K › A</span></li>
+        <li>تک‌نرس: <span class="order">A › 2 › 3 › … › Q › K</span></li>
+      </ul></div>
+    <div class="group"><h2>امتیاز</h2>
+      <ul>
+        <li>بردن دور: ۱ امتیاز.</li>
+        <li>کوت (هفت بر صفر): ۲ امتیاز.</li>
+        <li>حاکم‌کوت (تیم حاکم هیچ دستی نگیرد): ۳ امتیاز.</li>
+        <li>کوت در بی‌حکم‌ها فقط وقتی حساب می‌شود که در تنظیمات روشن باشد.</li>
+      </ul></div>
+  </section>
+</div>
+
+<script>
+/* Hokm (حکم) core: rules, game controller and AI.
+ * Works in the browser (window.HokmCore) and in Node (module.exports).
+ *
+ * Cards are integers 0..51: suit = floor(c / 13), rank = c % 13.
+ * Suits: 0 ♠ پیک, 1 ♥ دل, 2 ♣ گشنیز, 3 ♦ خشت.
+ * Ranks: 0 = "2" … 8 = "10", 9 = J, 10 = Q, 11 = K, 12 = A.
+ * Seats: 0 = human (bottom), 1 = right, 2 = top (partner), 3 = left.
+ * Play goes 0 → 1 → 2 → 3 (counter-clockwise). Teams: seats 0 & 2, seats 1 & 3.
+ *
+ * Hokm modes:
+ *   suit      — a trump suit; normal ranking A > K > … > 2
+ *   saras     — سرس: no trump, no ruffing; A > K > … > 2
+ *   naras     — نرس: no trump; 2 > 3 > … > K > A
+ *   taknaras  — تک‌نرس: no trump; A > 2 > 3 > … > K
+ */
+(function (root, factory) {
+  var api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.HokmCore = api;
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  var SUIT_SYM = ['♠', '♥', '♣', '♦'];
+  var SUIT_FA = ['پیک', 'دل', 'گشنیز', 'خشت'];
+  var RANK_LABEL = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+  var MODE_FA = { suit: 'حکم', saras: 'سرس', naras: 'نرس', taknaras: 'تک‌نرس' };
+  var NT_MODES = ['saras', 'naras', 'taknaras'];
+
+  var DEFAULTS = {
+    difficulty: 'hard',   // easy | medium | hard
+    saras: true,
+    naras: true,
+    taknaras: true,
+    kotNT: false,          // count کوت in saras / naras / taknaras
+    target: 7,             // match points
+    thinkMs: 260           // time budget for the hard AI per card
+  };
+
+  function suitOf(c) { return (c / 13) | 0; }
+  function rankOf(c) { return c % 13; }
+  function teamOf(seat) { return seat & 1; }
+  function partnerOf(seat) { return (seat + 2) & 3; }
+
+  // Higher number = stronger card within its suit, for the given mode.
+  function strength(c, mode) {
+    var r = c % 13;
+    if (mode === 'naras') return 12 - r;
+    if (mode === 'taknaras') return r === 12 ? 12 : 11 - r;
+    return r;
+  }
+
+  function cardLabel(c) { return RANK_LABEL[rankOf(c)] + SUIT_SYM[suitOf(c)]; }
+
+  function hokmLabel(h) {
+    if (!h) return '';
+    if (h.mode === 'suit') return SUIT_FA[h.trump];
+    return MODE_FA[h.mode];
+  }
+
+  function makeRng(seed) {
+    var a = seed >>> 0;
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function shuffle(arr, rng) {
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = (rng() * (i + 1)) | 0;
+      var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    }
+    return arr;
+  }
+
+  function fullDeck() { var d = []; for (var i = 0; i < 52; i++) d.push(i); return d; }
+
+  var now = (typeof performance !== 'undefined' && performance.now)
+    ? function () { return performance.now(); }
+    : function () { return Date.now(); };
+
+  /* ------------------------------------------------------------------ rules */
+
+  // Does card a beat the current winning card b? (b is always led suit or trump.)
+  function beats(a, b, hokm) {
+    var sa = suitOf(a), sb = suitOf(b), t = hokm.trump;
+    if (t >= 0) {
+      if (sa === t && sb !== t) return true;
+      if (sb === t && sa !== t) return false;
+    }
+    if (sa !== sb) return false;
+    return strength(a, hokm.mode) > strength(b, hokm.mode);
+  }
+
+  function trickWinnerIndex(cards, hokm) {
+    var best = 0;
+    for (var i = 1; i < cards.length; i++) if (beats(cards[i], cards[best], hokm)) best = i;
+    return best;
+  }
+
+  function legalMoves(hand, ledSuit) {
+    if (ledSuit < 0) return hand.slice();
+    var f = [];
+    for (var i = 0; i < hand.length; i++) if (suitOf(hand[i]) === ledSuit) f.push(hand[i]);
+    return f.length ? f : hand.slice();
+  }
+
+  function isNT(hokm) { return hokm.mode !== 'suit'; }
+
+  // Points for the round winner. کوت = 2, حاکم‌کوت (hakem's team gets nothing) = 3.
+  function roundPoints(winTeam, tricks, hakem, hokm, settings) {
+    var lose = 1 - winTeam;
+    var kotAllowed = !isNT(hokm) || !!settings.kotNT;
+    if (tricks[lose] === 0 && kotAllowed) return teamOf(hakem) === lose ? 3 : 2;
+    return 1;
+  }
+
+  function newRoundState(hands, hokm, hakem) {
+    return {
+      hands: hands.map(function (h) { return h.slice(); }),
+      hokm: hokm,
+      hakem: hakem,
+      leader: hakem,
+      turn: hakem,
+      trick: [],
+      trickSeats: [],
+      tricks: [0, 0],
+      played: new Uint8Array(52),
+      voids: [new Uint8Array(4), new Uint8Array(4), new Uint8Array(4), new Uint8Array(4)],
+      over: false,
+      winTeam: -1,
+      tricksPlayed: 0,
+      lastTrick: null
+    };
+  }
+
+  function cloneState(st) {
+    return {
+      hands: st.hands.map(function (h) { return h.slice(); }),
+      hokm: st.hokm,
+      hakem: st.hakem,
+      leader: st.leader,
+      turn: st.turn,
+      trick: st.trick.slice(),
+      trickSeats: st.trickSeats.slice(),
+      tricks: st.tricks.slice(),
+      played: st.played.slice(),
+      voids: st.voids.map(function (v) { return v.slice(); }),
+      over: st.over,
+      winTeam: st.winTeam,
+      tricksPlayed: st.tricksPlayed,
+      lastTrick: null
+    };
+  }
+
+  // Applies a card. Returns the trick winner seat when the trick completes, else -1.
+  function applyMove(st, seat, card) {
+    var h = st.hands[seat];
+    var i = h.indexOf(card);
+    h.splice(i, 1);
+    var led = st.trick.length ? suitOf(st.trick[0]) : -1;
+    if (led >= 0 && suitOf(card) !== led) st.voids[seat][led] = 1;
+    st.trick.push(card);
+    st.trickSeats.push(seat);
+    st.played[card] = 1;
+    if (st.trick.length === 4) {
+      var wi = trickWinnerIndex(st.trick, st.hokm);
+      var w = st.trickSeats[wi];
+      st.tricks[teamOf(w)]++;
+      st.lastTrick = { cards: st.trick, seats: st.trickSeats, winner: w };
+      st.trick = [];
+      st.trickSeats = [];
+      st.leader = w;
+      st.turn = w;
+      st.tricksPlayed++;
+      if (st.tricks[teamOf(w)] >= 7) { st.over = true; st.winTeam = teamOf(w); }
+      return w;
+    }
+    st.turn = (seat + 1) & 3;
+    return -1;
+  }
+
+  /* ------------------------------------------------------- heuristic player */
+
+  // A rule-based player that only uses public information plus its own hand.
+  // Used directly by the easy/medium AI and as the playout policy of the hard AI.
+  function heuristicMove(st, seat) {
+    var hand = st.hands[seat];
+    var hokm = st.hokm, mode = hokm.mode, t = hokm.trump;
+    var pos = st.trick.length;
+    var led = pos ? suitOf(st.trick[0]) : -1;
+    var legal = legalMoves(hand, led);
+    if (legal.length === 1) return legal[0];
+
+    var mine = new Uint8Array(52);
+    var i, c, s;
+    for (i = 0; i < hand.length; i++) mine[hand[i]] = 1;
+    var outStr = [[], [], [], []];
+    var outCnt = [0, 0, 0, 0];
+    for (c = 0; c < 52; c++) {
+      if (!st.played[c] && !mine[c]) { s = suitOf(c); outStr[s].push(strength(c, mode)); outCnt[s]++; }
+    }
+    function higherOut(card) {
+      var arr = outStr[suitOf(card)], v = strength(card, mode), n = 0;
+      for (var k = 0; k < arr.length; k++) if (arr[k] > v) n++;
+      return n;
+    }
+    var suitCount = [0, 0, 0, 0];
+    for (i = 0; i < hand.length; i++) suitCount[suitOf(hand[i])]++;
+    var partner = partnerOf(seat);
+    var myTeam = teamOf(seat);
+    var voids = st.voids;
+
+    function str(card) { return strength(card, mode); }
+    function lowest(cards) {
+      var b = cards[0];
+      for (var k = 1; k < cards.length; k++) if (str(cards[k]) < str(b)) b = cards[k];
+      return b;
+    }
+    function highest(cards) {
+      var b = cards[0];
+      for (var k = 1; k < cards.length; k++) if (str(cards[k]) > str(b)) b = cards[k];
+      return b;
+    }
+    function cheapest(cards) {
+      var b = cards[0], bv = 1e9;
+      for (var k = 0; k < cards.length; k++) {
+        var v = (t >= 0 && suitOf(cards[k]) === t ? 100 : 0) + str(cards[k]);
+        if (v < bv) { bv = v; b = cards[k]; }
+      }
+      return b;
+    }
+    function discard(cards) {
+      var b = cards[0], bv = 1e9;
+      for (var k = 0; k < cards.length; k++) {
+        var cc = cards[k], cs = suitOf(cc);
+        var v = str(cc);
+        if (t >= 0 && cs === t) v += 40;
+        if (higherOut(cc) === 0 && outCnt[cs] > 0) v += 18;
+        if (t >= 0 && cs !== t) v += suitCount[cs] * 0.7;
+        if (t < 0) v += suitCount[cs] * 0.9;
+        if (v < bv) { bv = v; b = cc; }
+      }
+      return b;
+    }
+    // Could an opponent among `after` beat `card` in this trick?
+    function canBeBeaten(card, after, ledSuit) {
+      var sc = suitOf(card);
+      for (var k = 0; k < after.length; k++) {
+        var p = after[k];
+        if (teamOf(p) === myTeam) continue;
+        var voidLed = voids[p][ledSuit] || outCnt[ledSuit] === 0;
+        if (!voidLed) {
+          if (sc === ledSuit && higherOut(card) > 0) return true;
+          // short suit: an unknown void may still ruff
+          if (t >= 0 && ledSuit !== t && sc !== t && outCnt[ledSuit] <= 1 && outCnt[t] > 0 && !voids[p][t]) return true;
+        } else if (t >= 0 && ledSuit !== t && !voids[p][t] && outCnt[t] > 0) {
+          if (sc !== t) return true;
+          if (higherOut(card) > 0) return true;
+        }
+      }
+      return false;
+    }
+
+    /* ---- leading ---- */
+    if (pos === 0) {
+      var bySuit = [[], [], [], []];
+      for (i = 0; i < hand.length; i++) bySuit[suitOf(hand[i])].push(hand[i]);
+      for (s = 0; s < 4; s++) bySuit[s].sort(function (a, b) { return str(b) - str(a); });
+      var opps = [(seat + 1) & 3, (seat + 3) & 3];
+      var oppCanRuff = function (su) {
+        if (t < 0 || su === t || outCnt[t] === 0) return false;
+        for (var k = 0; k < 2; k++) {
+          var p = opps[k];
+          if ((voids[p][su] || outCnt[su] === 0) && !voids[p][t]) return true;
+        }
+        return false;
+      };
+
+      // Draw trumps when holding the top trump.
+      if (t >= 0 && bySuit[t].length && outCnt[t] > 0) {
+        var topT = bySuit[t][0];
+        var hakemTeam = teamOf(st.hakem) === myTeam;
+        if (higherOut(topT) === 0 && (hakemTeam || bySuit[t].length >= outCnt[t])) return topT;
+      }
+      // Cash sure winners in side suits.
+      var cash = null, cashScore = -1;
+      for (s = 0; s < 4; s++) {
+        if (s === t || !bySuit[s].length) continue;
+        var top = bySuit[s][0];
+        if (higherOut(top) !== 0 || oppCanRuff(s)) continue;
+        var sc = outCnt[s] * 2 + bySuit[s].length;
+        if (sc > cashScore) { cashScore = sc; cash = top; }
+      }
+      if (cash !== null) return cash;
+      // Lead a suit partner can ruff.
+      if (t >= 0 && outCnt[t] > 0 && !voids[partner][t]) {
+        for (s = 0; s < 4; s++) {
+          if (s === t || !bySuit[s].length) continue;
+          if (voids[partner][s] && !voids[opps[0]][s] && !voids[opps[1]][s]) return bySuit[s][bySuit[s].length - 1];
+        }
+      }
+      // Otherwise lead low from the best long suit.
+      var bestS = -1, bestScore = -1e9;
+      for (s = 0; s < 4; s++) {
+        if (!bySuit[s].length) continue;
+        var score = bySuit[s].length * 2;
+        if (oppCanRuff(s)) score -= 12;
+        if (s === t) score -= 6;
+        if (t < 0 && voids[partner][s]) score -= 3;
+        if (bySuit[s].length === 1 && higherOut(bySuit[s][0]) === 1) score -= 4; // don't lead a lone second-best
+        if (score > bestScore) { bestScore = score; bestS = s; }
+      }
+      var arr = bySuit[bestS];
+      return arr[arr.length - 1];
+    }
+
+    /* ---- following ---- */
+    var curIdx = trickWinnerIndex(st.trick, hokm);
+    var curBest = st.trick[curIdx];
+    var curSeat = st.trickSeats[curIdx];
+    var after = [];
+    for (var k2 = pos + 1; k2 < 4; k2++) after.push((st.trickSeats[0] + k2) & 3);
+    var following = suitOf(legal[0]) === led && legal.every(function (x) { return suitOf(x) === led; }) && suitCount[led] > 0;
+    var winners = legal.filter(function (x) { return beats(x, curBest, hokm); });
+    var dump = function () { return following ? lowest(legal) : discard(legal); };
+
+    if (teamOf(curSeat) === myTeam) {
+      if (!after.length || !canBeBeaten(curBest, after, led)) return dump();
+      var safeP = winners.filter(function (x) { return !canBeBeaten(x, after, led); });
+      if (safeP.length) return cheapest(safeP);
+      return dump();
+    }
+    if (!winners.length) return dump();
+    if (!after.length) return cheapest(winners);
+    var safe = winners.filter(function (x) { return !canBeBeaten(x, after, led); });
+    if (safe.length) return cheapest(safe);
+    if (pos === 1) {
+      if (following) return lowest(legal);   // second hand low
+      return cheapest(winners);              // ruff
+    }
+    // third hand: play the winner hardest to beat
+    var best = winners[0], bv = 1e9;
+    for (i = 0; i < winners.length; i++) {
+      var v = higherOut(winners[i]) * 30 + str(winners[i]) + (t >= 0 && suitOf(winners[i]) === t && led !== t ? 15 : 0);
+      if (v < bv) { bv = v; best = winners[i]; }
+    }
+    return best;
+  }
+
+  /* ------------------------------------------------------------- hard AI */
+
+  // Deal the unseen cards to the other players, respecting known voids.
+  function sampleHands(st, seat, rng) {
+    var mine = st.hands[seat];
+    var known = new Uint8Array(52);
+    var i;
+    for (i = 0; i < mine.length; i++) known[mine[i]] = 1;
+    var unknown = [];
+    for (var c = 0; c < 52; c++) if (!st.played[c] && !known[c]) unknown.push(c);
+    var others = [];
+    for (i = 1; i < 4; i++) others.push((seat + i) & 3);
+
+    for (var attempt = 0; attempt < 30; attempt++) {
+      var relax = attempt >= 25;
+      shuffle(unknown, rng);
+      var elig = unknown.map(function (card) {
+        var s = suitOf(card), e = [];
+        for (var k = 0; k < 3; k++) if (relax || !st.voids[others[k]][s]) e.push(others[k]);
+        return e;
+      });
+      var order = unknown.map(function (_, idx) { return idx; });
+      order.sort(function (a, b) { return elig[a].length - elig[b].length; });
+      var cap = [0, 0, 0, 0];
+      for (i = 0; i < 3; i++) cap[others[i]] = st.hands[others[i]].length;
+      var hands = [[], [], [], []];
+      hands[seat] = mine.slice();
+      var ok = true;
+      // The hakem picked the hokm from his first five cards: he is more likely
+      // to hold trumps (or, in سرس/نرس/تک‌نرس, the strong cards of that mode).
+      var hk = st.hakem, hm = st.hokm;
+      var bias = function (p, card) {
+        if (p !== hk || hk === seat) return 1;
+        if (hm.mode === 'suit') return suitOf(card) === hm.trump ? 1.7 : 1;
+        return strength(card, hm.mode) >= 10 ? 1.4 : 1;
+      };
+      for (var oi = 0; oi < order.length; oi++) {
+        var idx = order[oi], e = elig[idx], tot = 0, card0 = unknown[idx];
+        var w = [];
+        for (i = 0; i < e.length; i++) { w.push(cap[e[i]] ? cap[e[i]] * bias(e[i], card0) : 0); tot += w[i]; }
+        if (tot === 0) { ok = false; break; }
+        var r = rng() * tot, pick = -1;
+        for (i = 0; i < e.length; i++) { r -= w[i]; if (r < 0 && w[i] > 0) { pick = e[i]; break; } }
+        if (pick < 0) for (i = e.length - 1; i >= 0; i--) if (w[i] > 0) { pick = e[i]; break; }
+        hands[pick].push(unknown[idx]);
+        cap[pick]--;
+      }
+      if (ok) return hands;
+    }
+    return null;
+  }
+
+  function playout(sim) {
+    while (!sim.over) {
+      var p = sim.turn;
+      applyMove(sim, p, heuristicMove(sim, p));
+    }
+  }
+
+  function evaluate(sim, team, ctx) {
+    var pts = roundPoints(sim.winTeam, sim.tricks, sim.hakem, sim.hokm, ctx.settings);
+    var win = sim.winTeam === team;
+    var v;
+    if (ctx.scores) {
+      var need = win ? ctx.settings.target - ctx.scores[team] : ctx.settings.target - ctx.scores[1 - team];
+      v = (win ? 1 : -1) * Math.min(pts, Math.max(1, need));
+      if (need <= pts) v *= 1.5; // decides the match
+    } else {
+      v = win ? pts : -pts;
+    }
+    return v + 0.04 * (sim.tricks[team] - sim.tricks[1 - team]);
+  }
+
+  // Cards that are interchangeable (touching, nothing outstanding between) — keep one each.
+  function distinctMoves(st, seat, legal) {
+    var mode = st.hokm.mode;
+    var mine = new Uint8Array(52);
+    var hand = st.hands[seat];
+    for (var i = 0; i < hand.length; i++) mine[hand[i]] = 1;
+    var bySuit = [[], [], [], []];
+    legal.forEach(function (c) { bySuit[suitOf(c)].push(c); });
+    var res = [];
+    for (var s = 0; s < 4; s++) {
+      var arr = bySuit[s];
+      if (!arr.length) continue;
+      arr.sort(function (a, b) { return strength(a, mode) - strength(b, mode); });
+      var outInSuit = [];
+      for (var r = 0; r < 13; r++) {
+        var c = s * 13 + r;
+        if (!st.played[c] && !mine[c]) outInSuit.push(strength(c, mode));
+      }
+      res.push(arr[0]);
+      for (var j = 1; j < arr.length; j++) {
+        var lo = strength(arr[j - 1], mode), hi = strength(arr[j], mode);
+        var gap = outInSuit.some(function (v) { return v > lo && v < hi; });
+        if (gap) res.push(arr[j]);
+      }
+    }
+    return res;
+  }
+
+  function pimcMove(st, seat, ctx) {
+    var led = st.trick.length ? suitOf(st.trick[0]) : -1;
+    var legal = legalMoves(st.hands[seat], led);
+    if (legal.length === 1) return legal[0];
+    var moves = distinctMoves(st, seat, legal);
+    if (moves.length === 1) return moves[0];
+    var rng = ctx.rng;
+    var totals = new Float64Array(moves.length);
+    var team = teamOf(seat);
+    var budget = ctx.thinkMs, start = now(), n = 0;
+    var minS = ctx.minSamples || 24, maxS = ctx.maxSamples || 400;
+    while (n < maxS && (n < minS || now() - start < budget)) {
+      var hands = sampleHands(st, seat, rng);
+      if (!hands) break;
+      for (var m = 0; m < moves.length; m++) {
+        var sim = cloneState(st);
+        sim.hands = hands.map(function (h) { return h.slice(); });
+        applyMove(sim, seat, moves[m]);
+        playout(sim);
+        totals[m] += evaluate(sim, team, ctx);
+      }
+      n++;
+    }
+    var best = 0;
+    for (var i = 1; i < moves.length; i++) if (totals[i] > totals[best] + 1e-9) best = i;
+    // Prefer the heuristic's card when it is as good as the best (keeps play natural).
+    var h = heuristicMove(st, seat);
+    var hi = moves.indexOf(h);
+    if (hi >= 0 && totals[hi] >= totals[best] - 1e-9) return h;
+    return moves[best];
+  }
+
+  /* ----------------------------------------------------------- hokm choice */
+
+  function hokmOptions(settings) {
+    var opts = [];
+    for (var s = 0; s < 4; s++) opts.push({ mode: 'suit', trump: s });
+    NT_MODES.forEach(function (m) { if (settings[m]) opts.push({ mode: m, trump: -1 }); });
+    return opts;
+  }
+
+  function sameHokm(a, b) { return a && b && a.mode === b.mode && a.trump === b.trump; }
+
+  function chooseHokmSimple(five, rng) {
+    var cnt = [0, 0, 0, 0], hi = [0, 0, 0, 0];
+    five.forEach(function (c) { var s = suitOf(c); cnt[s]++; hi[s] += rankOf(c); });
+    var best = 0;
+    for (var s = 1; s < 4; s++) {
+      if (cnt[s] > cnt[best] || (cnt[s] === cnt[best] && (hi[s] > hi[best] || (hi[s] === hi[best] && rng() < 0.5)))) best = s;
+    }
+    return { mode: 'suit', trump: best };
+  }
+
+  // Monte-Carlo: try every allowed hokm on many random completions of the deal.
+  function chooseHokmMC(five, hakem, settings, rng, samples, budgetMs, scores) {
+    var opts = hokmOptions(settings);
+    var totals = new Float64Array(opts.length);
+    var known = new Uint8Array(52);
+    five.forEach(function (c) { known[c] = 1; });
+    var rest = [];
+    for (var c = 0; c < 52; c++) if (!known[c]) rest.push(c);
+    var team = teamOf(hakem);
+    var ctx = { settings: settings, scores: scores };
+    var start = now(), n = 0;
+    while (n < samples && (n < 8 || now() - start < budgetMs)) {
+      shuffle(rest, rng);
+      var hands = [[], [], [], []];
+      hands[hakem] = five.slice();
+      var k = 0;
+      for (var i = 0; i < 4; i++) {
+        var p = (hakem + i) & 3;
+        while (hands[p].length < 13) hands[p].push(rest[k++]);
+      }
+      for (var o = 0; o < opts.length; o++) {
+        var sim = newRoundState(hands, opts[o], hakem);
+        playout(sim);
+        totals[o] += evaluate(sim, team, ctx);
+      }
+      n++;
+    }
+    var best = 0;
+    for (var j = 1; j < opts.length; j++) if (totals[j] > totals[best]) best = j;
+    return opts[best];
+  }
+
+  function chooseHokm(five, hakem, settings, rng, scores) {
+    var d = settings.difficulty;
+    if (d === 'easy') return chooseHokmSimple(five, rng);
+    if (d === 'medium') return chooseHokmMC(five, hakem, settings, rng, 40, 150, scores);
+    return chooseHokmMC(five, hakem, settings, rng, 120, Math.max(350, settings.thinkMs * 2), scores);
+  }
+
+  function chooseCard(st, seat, settings, rng, scores) {
+    var d = settings.difficulty;
+    var led = st.trick.length ? suitOf(st.trick[0]) : -1;
+    var legal = legalMoves(st.hands[seat], led);
+    if (legal.length === 1) return legal[0];
+    if (d === 'easy') {
+      if (rng() < 0.35) return legal[(rng() * legal.length) | 0];
+      return heuristicMove(st, seat);
+    }
+    if (d === 'medium') return heuristicMove(st, seat);
+    return pimcMove(st, seat, { settings: settings, rng: rng, thinkMs: settings.thinkMs, scores: scores });
+  }
+
+  /* --------------------------------------------------------- game controller */
+
+  function HokmGame(settings, seed) {
+    this.settings = Object.assign({}, DEFAULTS, settings || {});
+    this.seed = (seed === undefined ? (Date.now() ^ ((Math.random() * 1e9) | 0)) : seed) >>> 0;
+    this.rng = makeRng(this.seed);
+    this.scores = [0, 0];
+    this.hakem = -1;
+    this.phase = 'idle';      // idle | chooseHokm | play | roundOver | matchOver
+    this.roundNo = 0;
+    this.hands = null;
+    this.five = null;
+    this.st = null;
+    this.history = [];        // finished rounds
+    this.tricks = [];         // finished tricks of the current round
+  }
+
+  HokmGame.prototype.startRound = function () {
+    var ev = { hakemDraw: null };
+    if (this.hakem < 0) {
+      var deck = shuffle(fullDeck(), this.rng);
+      var seat = (this.rng() * 4) | 0, seq = [];
+      for (var i = 0; i < deck.length; i++) {
+        seq.push({ seat: seat, card: deck[i] });
+        if (rankOf(deck[i]) === 12) { this.hakem = seat; break; }
+        seat = (seat + 1) & 3;
+      }
+      ev.hakemDraw = seq;
+    }
+    var d = shuffle(fullDeck(), this.rng);
+    var hands = [[], [], [], []], k = 0, rounds = [5, 4, 4];
+    for (var r = 0; r < 3; r++) {
+      for (var p = 0; p < 4; p++) {
+        var seat2 = (this.hakem + p) & 3;
+        for (var j = 0; j < rounds[r]; j++) hands[seat2].push(d[k++]);
+      }
+    }
+    this.hands = hands;
+    this.five = hands[this.hakem].slice(0, 5);
+    this.st = null;
+    this.tricks = [];
+    this.phase = 'chooseHokm';
+    this.roundNo++;
+    return ev;
+  };
+
+  HokmGame.prototype.options = function () { return hokmOptions(this.settings); };
+
+  HokmGame.prototype.aiHokm = function () {
+    return chooseHokm(this.five, this.hakem, this.settings, this.rng, this.scores);
+  };
+
+  HokmGame.prototype.setHokm = function (h) {
+    if (this.phase !== 'chooseHokm') throw new Error('not choosing hokm');
+    var ok = this.options().some(function (o) { return sameHokm(o, h); });
+    if (!ok) throw new Error('hokm not allowed');
+    this.st = newRoundState(this.hands, { mode: h.mode, trump: h.mode === 'suit' ? h.trump : -1 }, this.hakem);
+    this.phase = 'play';
+  };
+
+  HokmGame.prototype.turn = function () { return this.st ? this.st.turn : -1; };
+
+  HokmGame.prototype.legal = function (seat) {
+    var st = this.st;
+    var led = st.trick.length ? suitOf(st.trick[0]) : -1;
+    return legalMoves(st.hands[seat], led);
+  };
+
+  HokmGame.prototype.aiCard = function (seat) {
+    return chooseCard(this.st, seat, this.settings, this.rng, this.scores);
+  };
+
+  HokmGame.prototype.play = function (seat, card) {
+    var st = this.st;
+    if (this.phase !== 'play') throw new Error('not in play');
+    if (st.turn !== seat) throw new Error('not your turn');
+    if (this.legal(seat).indexOf(card) < 0) throw new Error('illegal card');
+    var w = applyMove(st, seat, card);
+    var res = { winner: w, trickDone: w >= 0, roundOver: null, matchOver: false };
+    if (w >= 0) this.tricks.push(st.lastTrick);
+    if (st.over) {
+      var pts = roundPoints(st.winTeam, st.tricks, st.hakem, st.hokm, this.settings);
+      var kot = pts > 1;
+      this.scores[st.winTeam] += pts;
+      var info = {
+        winTeam: st.winTeam, tricks: st.tricks.slice(), points: pts, kot: kot,
+        hakemKot: pts === 3, hakem: st.hakem, hokm: st.hokm
+      };
+      if (st.winTeam !== teamOf(this.hakem)) this.hakem = (this.hakem + 1) & 3;
+      info.nextHakem = this.hakem;
+      this.history.push(info);
+      res.roundOver = info;
+      if (this.scores[st.winTeam] >= this.settings.target) {
+        this.phase = 'matchOver';
+        res.matchOver = true;
+      } else {
+        this.phase = 'roundOver';
+      }
+    }
+    return res;
+  };
+
+  HokmGame.prototype.toJSON = function () {
+    var st = this.st;
+    return {
+      v: 1,
+      settings: this.settings,
+      seed: this.seed,
+      scores: this.scores,
+      hakem: this.hakem,
+      phase: this.phase,
+      roundNo: this.roundNo,
+      hands: this.hands,
+      five: this.five,
+      history: this.history,
+      tricks: this.tricks,
+      st: st ? {
+        hands: st.hands, hokm: st.hokm, hakem: st.hakem, leader: st.leader, turn: st.turn,
+        trick: st.trick, trickSeats: st.trickSeats, tricks: st.tricks,
+        played: Array.prototype.slice.call(st.played),
+        voids: st.voids.map(function (v) { return Array.prototype.slice.call(v); }),
+        over: st.over, winTeam: st.winTeam, tricksPlayed: st.tricksPlayed
+      } : null
+    };
+  };
+
+  HokmGame.fromJSON = function (o) {
+    var g = new HokmGame(o.settings, o.seed);
+    g.rng = makeRng((o.seed ^ (o.roundNo * 7919) ^ Date.now()) >>> 0);
+    g.scores = o.scores; g.hakem = o.hakem; g.phase = o.phase; g.roundNo = o.roundNo;
+    g.hands = o.hands; g.five = o.five; g.history = o.history || []; g.tricks = o.tricks || [];
+    if (o.st) {
+      var s = o.st;
+      g.st = {
+        hands: s.hands, hokm: s.hokm, hakem: s.hakem, leader: s.leader, turn: s.turn,
+        trick: s.trick, trickSeats: s.trickSeats, tricks: s.tricks,
+        played: Uint8Array.from(s.played),
+        voids: s.voids.map(function (v) { return Uint8Array.from(v); }),
+        over: s.over, winTeam: s.winTeam, tricksPlayed: s.tricksPlayed, lastTrick: null
+      };
+    }
+    return g;
+  };
+
+  return {
+    SUIT_SYM: SUIT_SYM, SUIT_FA: SUIT_FA, RANK_LABEL: RANK_LABEL, MODE_FA: MODE_FA, DEFAULTS: DEFAULTS,
+    suitOf: suitOf, rankOf: rankOf, teamOf: teamOf, partnerOf: partnerOf, strength: strength,
+    cardLabel: cardLabel, hokmLabel: hokmLabel, makeRng: makeRng, shuffle: shuffle, fullDeck: fullDeck,
+    beats: beats, trickWinnerIndex: trickWinnerIndex, legalMoves: legalMoves, roundPoints: roundPoints,
+    newRoundState: newRoundState, cloneState: cloneState, applyMove: applyMove,
+    heuristicMove: heuristicMove, pimcMove: pimcMove, sampleHands: sampleHands, playout: playout,
+    hokmOptions: hokmOptions, sameHokm: sameHokm, chooseHokm: chooseHokm, chooseHokmMC: chooseHokmMC,
+    chooseHokmSimple: chooseHokmSimple, chooseCard: chooseCard, distinctMoves: distinctMoves,
+    HokmGame: HokmGame
+  };
+});
+
+</script>
+<script>
+(function () {
+  'use strict';
+  var H = window.HokmCore;
+  function $(id) { return document.getElementById(id); }
+  var FA = '۰۱۲۳۴۵۶۷۸۹';
+  function fa(n) { return String(n).replace(/\d/g, function (d) { return FA[d]; }); }
+  var NAMES = ['شما', 'نیلوفر', 'بهرام', 'کاوه'];
+  var SYM = H.SUIT_SYM.map(function (s) { return s + '\uFE0E'; }); // force text (not emoji) glyphs
+  var RANK_NAME = ['دو', 'سه', 'چهار', 'پنج', 'شش', 'هفت', 'هشت', 'نه', 'ده', 'سرباز', 'بی‌بی', 'شاه', 'تک'];
+  var NT_INFO = { saras: ['سرس', 'A › K › … › 2'], naras: ['نرس', '2 › 3 › … › A'], taknaras: ['تک‌نرس', 'A › 2 › … › K'] };
+  var SPEEDS = { slow: { ai: 1000, trick: 1500, step: 260 }, normal: { ai: 620, trick: 1000, step: 170 }, fast: { ai: 320, trick: 620, step: 100 } };
+  var SKEY = 'hokm.settings.v1', GKEY = 'hokm.save.v1';
+  var store = {
+    get: function (k) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } },
+    del: function (k) { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } }
+  };
+  var settings = Object.assign({ difficulty: 'hard', saras: true, naras: true, taknaras: true, kotNT: false, target: 7, speed: 'normal', tap: 'single', sound: true }, store.get(SKEY) || {});
+  function gameSettings() {
+    return { difficulty: settings.difficulty, saras: settings.saras, naras: settings.naras, taknaras: settings.taknaras, kotNT: settings.kotNT, target: settings.target };
+  }
+  function speed() { return SPEEDS[settings.speed] || SPEEDS.normal; }
+
+  /* ---------- sound ---------- */
+  var actx = null;
+  function beep(freq, dur, type, vol, when) {
+    if (!settings.sound) return;
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      var t = actx.currentTime + (when || 0), o = actx.createOscillator(), g = actx.createGain();
+      o.type = type || 'sine'; o.frequency.value = freq;
+      g.gain.setValueAtTime(vol || 0.05, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + dur + 0.03);
+    } catch (e) { /* audio unavailable */ }
+  }
+  var sfx = {
+    card: function () { beep(310, 0.07, 'triangle', 0.06); },
+    tick: function () { beep(520, 0.04, 'square', 0.015); },
+    win: function () { beep(660, 0.12, 'sine', 0.05); beep(880, 0.18, 'sine', 0.05, 0.1); },
+    lose: function () { beep(240, 0.2, 'sine', 0.05); },
+    bad: function () { beep(140, 0.08, 'sawtooth', 0.03); }
+  };
+
+  /* ---------- card markup ---------- */
+  function cardInner(c) {
+    var s = H.suitOf(c), r = H.RANK_LABEL[H.rankOf(c)], sym = SYM[s];
+    return '<span class="ci"><b>' + r + '</b><i>' + sym + '</i></span><span class="cs">' + sym + '</span>';
+  }
+  function cardClass(c) {
+    var s = H.suitOf(c), r = H.rankOf(c);
+    return 'card' + (s === 1 || s === 3 ? ' red' : '') + (r >= 9 && r <= 11 ? ' court' : '');
+  }
+  function cardName(c) { return RANK_NAME[H.rankOf(c)] + ' ' + H.SUIT_FA[H.suitOf(c)]; }
+  function cardDiv(c, extra) { return '<div class="' + cardClass(c) + (extra ? ' ' + extra : '') + '" role="img" aria-label="' + cardName(c) + '">' + cardInner(c) + '</div>'; }
+
+  /* ---------- screens ---------- */
+  var current = 'home', returnTo = 'home';
+  function show(id) {
+    ['home', 'game', 'settings', 'rules'].forEach(function (s) { $(s).hidden = s !== id; });
+    current = id;
+    if (id === 'home') refreshHome();
+    if (id === 'game') requestAnimationFrame(layoutHand);
+  }
+  function refreshHome() {
+    var saved = store.get(GKEY);
+    $('btnContinue').hidden = !(saved && saved.phase && saved.phase !== 'matchOver');
+    syncControls();
+  }
+  $('fan').innerHTML = cardDiv(0 * 13 + 12) + cardDiv(3 * 13 + 12) + cardDiv(1 * 13 + 12);
+
+  /* ---------- settings controls ---------- */
+  function syncControls() {
+    document.querySelectorAll('.seg[data-set]').forEach(function (seg) {
+      var key = seg.getAttribute('data-set');
+      seg.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-val') === settings[key])); });
+    });
+    document.querySelectorAll('.switch[data-set]').forEach(function (sw) {
+      sw.setAttribute('aria-checked', String(!!settings[sw.getAttribute('data-set')]));
+    });
+    $('tgtVal').textContent = fa(settings.target);
+  }
+  function saveSettings() {
+    store.set(SKEY, settings);
+    syncControls();
+    if (game) { game.settings.difficulty = settings.difficulty; }
+  }
+  document.querySelectorAll('.seg[data-set]').forEach(function (seg) {
+    seg.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      settings[seg.getAttribute('data-set')] = b.getAttribute('data-val');
+      saveSettings();
+    });
+  });
+  document.querySelectorAll('.switch[data-set]').forEach(function (sw) {
+    sw.addEventListener('click', function () {
+      var k = sw.getAttribute('data-set');
+      settings[k] = !settings[k];
+      saveSettings();
+      if (k === 'sound' && settings.sound) sfx.card();
+    });
+  });
+  $('tgtMinus').addEventListener('click', function () { settings.target = Math.max(1, settings.target - 1); saveSettings(); });
+  $('tgtPlus').addEventListener('click', function () { settings.target = Math.min(21, settings.target + 1); saveSettings(); });
+  document.querySelectorAll('[data-go]').forEach(function (b) {
+    b.addEventListener('click', function () { returnTo = 'home'; show(b.getAttribute('data-go')); });
+  });
+  document.querySelectorAll('[data-back]').forEach(function (b) {
+    b.addEventListener('click', function () { goBack(); });
+  });
+
+  function goBack() {
+    show(returnTo);
+    if (returnTo === 'game' && $('menuOverlay').hidden && $('lastOverlay').hidden) setPaused(false);
+  }
+
+  /* ---------- game state & flow control ---------- */
+  var game = null, runId = 0;
+  var CANCEL = { cancelled: true };
+  function alive(id) { if (id !== runId) throw CANCEL; }
+  var paused = false, pauseWaiters = [];
+  function sleep(ms, id) {
+    return new Promise(function (res) { setTimeout(res, ms); }).then(function () {
+      alive(id);
+      if (!paused) return;
+      return new Promise(function (res) { pauseWaiters.push(res); }).then(function () { alive(id); });
+    });
+  }
+  function frame() { return new Promise(function (r) { requestAnimationFrame(function () { setTimeout(r, 16); }); }); }
+  function setPaused(p) {
+    paused = p;
+    if (!p) { var w = pauseWaiters; pauseWaiters = []; w.forEach(function (f) { f(); }); }
+  }
+  function save() {
+    if (!game) return;
+    if (game.phase === 'matchOver') store.del(GKEY); else store.set(GKEY, game.toJSON());
+  }
+
+  /* ---------- rendering ---------- */
+  var seatEls = [$('seat0'), $('seat1'), $('seat2'), $('seat3')];
+  function seatMarkup(p) {
+    if (p === 0) return '<svg aria-hidden="true" class="crown-me" hidden><use href="#i-crown"/></svg><span>شما</span><span class="hk" hidden>حاکم</span>';
+    var initial = NAMES[p].charAt(0);
+    var sub = p === 2 ? 'یار شما، <span class="cnt"></span>' : '<span class="cnt"></span>';
+    return '<div class="av">' + initial + '<svg class="crown" aria-hidden="true"><use href="#i-crown"/></svg></div>' +
+      '<div><div class="nm">' + NAMES[p] + '</div><div class="sub">' + sub + '</div></div>';
+  }
+  for (var p0 = 0; p0 < 4; p0++) seatEls[p0].innerHTML = seatMarkup(p0);
+
+  function handCount(p) {
+    if (!game) return 0;
+    if (game.phase === 'chooseHokm') return 5;
+    if (game.st) return game.st.hands[p].length;
+    return 0;
+  }
+  function renderSeats(turn) {
+    for (var p = 1; p < 4; p++) {
+      var el = seatEls[p];
+      el.classList.toggle('hakem', !!game && game.hakem === p);
+      el.classList.toggle('turn', turn === p);
+      el.querySelector('.cnt').textContent = fa(handCount(p)) + ' برگ';
+    }
+    var me = seatEls[0], isH = !!game && game.hakem === 0;
+    me.querySelector('.crown-me').hidden = !isH;
+    me.querySelector('.hk').hidden = !isH;
+  }
+  function renderScore(bumpTeam) {
+    var tr = game && game.st ? game.st.tricks : [0, 0];
+    $('trUs').textContent = fa(tr[0]); $('trThem').textContent = fa(tr[1]);
+    $('ptUs').textContent = 'امتیاز ' + fa(game ? game.scores[0] : 0);
+    $('ptThem').textContent = 'امتیاز ' + fa(game ? game.scores[1] : 0);
+    if (bumpTeam === 0 || bumpTeam === 1) {
+      var el = bumpTeam === 0 ? $('trUs') : $('trThem');
+      el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
+    }
+  }
+  function renderChip() {
+    var chip = $('hokmChip');
+    if (!game || game.hakem < 0) { chip.innerHTML = '<span class="hk">تعیین حاکم…</span>'; return; }
+    var hk = '<span class="sep"></span><span class="hk">حاکم: ' + (game.hakem === 0 ? 'شما' : NAMES[game.hakem]) + '</span>';
+    if (!game.st) { chip.innerHTML = '<span>در انتظار حکم</span>' + hk; return; }
+    var h = game.st.hokm;
+    if (h.mode === 'suit') {
+      var red = h.trump === 1 || h.trump === 3;
+      chip.innerHTML = 'حکم:<span class="sym' + (red ? ' r' : '') + '">' + SYM[h.trump] + '</span>' + H.SUIT_FA[h.trump] + hk;
+    } else {
+      chip.innerHTML = '<span>' + NT_INFO[h.mode][0] + '</span><span class="hk">(بی‌حکم)</span>' + hk;
+    }
+  }
+  function boardMsg(html) {
+    var el = $('boardMsg');
+    el.innerHTML = html ? '<span>' + html + '</span>' : '';
+  }
+  function clearBoard() {
+    for (var p = 0; p < 4; p++) { $('slot' + p).innerHTML = ''; }
+    $('slot0').classList.remove('empty-turn');
+    $('boardInner').className = 'board-inner';
+  }
+  function putOnBoard(p, c, animate) {
+    $('slot' + p).innerHTML = cardDiv(c, animate ? 'from-' + p : '');
+  }
+  function renderTrick() {
+    clearBoard();
+    if (!game || !game.st) return;
+    var st = game.st;
+    for (var i = 0; i < st.trick.length; i++) putOnBoard(st.trickSeats[i], st.trick[i], false);
+  }
+
+  /* ---------- the human hand ---------- */
+  var handEl = $('hand');
+  var handCards = [];
+  var selected = -1;
+  function myCards() {
+    if (!game) return [];
+    if (game.phase === 'chooseHokm') return game.hands[0].slice(0, 5);
+    if (game.st) return game.st.hands[0].slice();
+    return [];
+  }
+  function sortCards(cards) {
+    var st = game && game.st, mode = st ? st.hokm.mode : 'suit';
+    var t = st && st.hokm.mode === 'suit' ? st.hokm.trump : -1;
+    var order = t >= 0 ? [t, (t + 1) & 3, (t + 2) & 3, (t + 3) & 3] : [0, 1, 2, 3];
+    return cards.slice().sort(function (a, b) {
+      var sa = order.indexOf(H.suitOf(a)), sb = order.indexOf(H.suitOf(b));
+      if (sa !== sb) return sa - sb;
+      return H.strength(b, mode) - H.strength(a, mode);
+    });
+  }
+  function renderHand(dealFrom) {
+    var cards = sortCards(myCards());
+    var legal = pendingPick ? game.legal(0) : null;
+    handCards = cards;
+    var html = '';
+    cards.forEach(function (c, i) {
+      var cls = cardClass(c);
+      if (legal && legal.indexOf(c) >= 0) cls += ' legal';
+      if (c === selected) cls += ' sel';
+      var deal = dealFrom !== undefined && i >= 0 && dealFrom.indexOf(c) < 0;
+      if (deal) cls += ' deal';
+      html += '<button type="button" class="' + cls + '" data-c="' + c + '" aria-label="' + cardName(c) + '"' +
+        (deal ? ' style="animation-delay:' + (i * 45) + 'ms"' : '') + '>' + cardInner(c) + '</button>';
+    });
+    handEl.innerHTML = html;
+    handEl.classList.toggle('active', !!legal);
+    layoutHand();
+  }
+  function layoutHand() {
+    var btns = handEl.querySelectorAll('.card');
+    if (!btns.length) return;
+    var W = handEl.clientWidth, cw = btns[0].offsetWidth, n = btns.length;
+    var step = n > 1 ? Math.min(cw * 0.8, (W - cw) / (n - 1)) : 0;
+    var total = cw + step * (n - 1), start = Math.max(0, (W - total) / 2);
+    for (var i = 0; i < n; i++) btns[i].style.left = (start + i * step) + 'px';
+  }
+  window.addEventListener('resize', function () { requestAnimationFrame(layoutHand); });
+
+  var pendingPick = null;
+  function humanPick(id) {
+    return new Promise(function (resolve) {
+      pendingPick = resolve;
+      selected = -1;
+      renderHand();
+      var st = game.st;
+      var pill = $('turnPill');
+      if (!st.trick.length) pill.textContent = 'نوبت شما: دست را شروع کنید';
+      else {
+        var led = H.suitOf(st.trick[0]);
+        var has = st.hands[0].some(function (c) { return H.suitOf(c) === led; });
+        pill.textContent = has ? 'نوبت شما: باید ' + H.SUIT_FA[led] + ' بازی کنید' : 'نوبت شما: ' + H.SUIT_FA[led] + ' ندارید، هر برگی آزاد است';
+      }
+      pill.hidden = false;
+      $('slot0').classList.add('empty-turn');
+    }).then(function (c) { alive(id); return c; });
+  }
+  handEl.addEventListener('click', function (e) {
+    var b = e.target.closest('.card'); if (!b || !pendingPick || paused) return;
+    var c = +b.getAttribute('data-c');
+    if (game.legal(0).indexOf(c) < 0) {
+      sfx.bad();
+      b.classList.remove('nope'); void b.offsetWidth; b.classList.add('nope');
+      return;
+    }
+    if (settings.tap === 'double' && selected !== c) {
+      selected = c;
+      handEl.querySelectorAll('.card.sel').forEach(function (x) { x.classList.remove('sel'); });
+      b.classList.add('sel');
+      return;
+    }
+    var r = pendingPick; pendingPick = null; selected = -1;
+    $('turnPill').hidden = true;
+    $('slot0').classList.remove('empty-turn');
+    r(c);
+  });
+
+  /* ---------- hokm choice ---------- */
+  var hokmPick = null, hokmResolve = null;
+  function humanHokm(id) {
+    return new Promise(function (resolve) {
+      hokmResolve = resolve; hokmPick = null;
+      var five = sortCards(game.hands[0].slice(0, 5));
+      $('fiveCards').innerHTML = five.map(function (c) { return cardDiv(c); }).join('');
+      var sg = '';
+      for (var s = 0; s < 4; s++) {
+        sg += '<button type="button" data-suit="' + s + '" aria-pressed="false"><span class="' + (s === 1 || s === 3 ? 'r' : '') + '">' + SYM[s] + '</span>' + H.SUIT_FA[s] + '</button>';
+      }
+      $('suitGrid').innerHTML = sg;
+      var nts = ['saras', 'naras', 'taknaras'].filter(function (m) { return game.settings[m]; });
+      $('ntGrid').innerHTML = nts.map(function (m) {
+        return '<button type="button" data-mode="' + m + '" aria-pressed="false"><b>' + NT_INFO[m][0] + '</b><small>' + NT_INFO[m][1] + '</small></button>';
+      }).join('');
+      $('ntGrid').style.gridTemplateColumns = 'repeat(' + Math.max(1, nts.length) + ', minmax(0, 1fr))';
+      $('ntGrid').hidden = $('ntDivider').hidden = $('ntHint').hidden = !nts.length;
+      $('hokmConfirm').disabled = true;
+      $('hokmConfirm').textContent = 'یک حکم انتخاب کنید';
+      $('hokmOverlay').hidden = false;
+    }).then(function (h) { alive(id); return h; });
+  }
+  function pickHokm(h, btn) {
+    hokmPick = h;
+    document.querySelectorAll('#suitGrid button, #ntGrid button').forEach(function (b) { b.setAttribute('aria-pressed', String(b === btn)); });
+    $('hokmConfirm').disabled = false;
+    $('hokmConfirm').textContent = 'اعلام حکم: ' + (h.mode === 'suit' ? H.SUIT_FA[h.trump] : NT_INFO[h.mode][0]);
+  }
+  $('suitGrid').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    pickHokm({ mode: 'suit', trump: +b.getAttribute('data-suit') }, b);
+  });
+  $('ntGrid').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    pickHokm({ mode: b.getAttribute('data-mode'), trump: -1 }, b);
+  });
+  $('hokmConfirm').addEventListener('click', function () {
+    if (!hokmPick || !hokmResolve) return;
+    $('hokmOverlay').hidden = true;
+    var r = hokmResolve; hokmResolve = null; r(hokmPick);
+  });
+
+  /* ---------- round steps ---------- */
+  async function beginRound(id) {
+    var ev = game.startRound();
+    save();
+    clearBoard(); boardMsg(''); renderScore(); renderChip();
+    handEl.innerHTML = ''; renderSeats(-1);
+    if (ev.hakemDraw) {
+      boardMsg('');
+      var seq = ev.hakemDraw;
+      var step = Math.max(80, Math.min(speed().step, 3200 / seq.length));
+      for (var i = 0; i < seq.length; i++) {
+        putOnBoard(seq[i].seat, seq[i].card, true);
+        sfx.tick();
+        await sleep(step, id);
+      }
+      var last = $('slot' + game.hakem).querySelector('.card');
+      if (last) last.classList.add('win');
+      renderSeats(-1); renderChip();
+      boardMsg('اولین تک<em>حاکم: ' + NAMES[game.hakem] + '</em>');
+      await sleep(1500, id);
+      clearBoard(); boardMsg('');
+    }
+  }
+  async function hokmStep(id) {
+    clearBoard(); renderChip(); renderSeats(-1);
+    renderHand([]);
+    var h;
+    if (game.hakem === 0) {
+      h = await humanHokm(id);
+    } else {
+      seatEls[game.hakem].classList.add('turn');
+      boardMsg(NAMES[game.hakem] + ' حکم را انتخاب می‌کند…');
+      await sleep(Math.max(500, speed().ai), id);
+      await frame(); alive(id);
+      h = game.aiHokm();
+      seatEls[game.hakem].classList.remove('turn');
+    }
+    var before = myCards();
+    game.setHokm(h);
+    save();
+    renderChip(); renderScore();
+    var label = h.mode === 'suit' ? SYM[h.trump] + ' ' + H.SUIT_FA[h.trump] : NT_INFO[h.mode][0];
+    boardMsg((game.hakem === 0 ? 'شما' : NAMES[game.hakem]) + ' حکم کرد<em>' + label + '</em>');
+    sfx.win();
+    renderHand(before); renderSeats(-1);
+    await sleep(1400, id);
+    boardMsg('');
+  }
+  async function playStep(id) {
+    var p = game.turn();
+    renderSeats(p);
+    var card;
+    if (p === 0) {
+      card = await humanPick(id);
+    } else {
+      var sp = speed();
+      await sleep(Math.round(sp.ai * 0.35), id);
+      await frame(); alive(id);
+      var t0 = Date.now();
+      card = game.aiCard(p);
+      await sleep(Math.max(0, Math.round(sp.ai * 0.65) - (Date.now() - t0)), id);
+    }
+    var res = game.play(p, card);
+    save();
+    sfx.card();
+    putOnBoard(p, card, true);
+    renderSeats(-1);
+    if (p === 0) renderHand();
+    if (res.trickDone) {
+      await sleep(300, id);
+      var wEl = $('slot' + res.winner).querySelector('.card');
+      if (wEl) wEl.classList.add('win');
+      if (H.teamOf(res.winner) === 0) sfx.win(); else sfx.lose();
+      await sleep(speed().trick, id);
+      $('boardInner').classList.add('to-' + res.winner);
+      await sleep(460, id);
+      clearBoard();
+      renderScore(H.teamOf(res.winner));
+    } else {
+      await sleep(260, id);
+    }
+    if (res.roundOver) await showResult(res, id);
+  }
+
+  function pipsRow(team, cls, label) {
+    var n = Math.max(game.settings.target, game.scores[team]);
+    var dots = '';
+    for (var i = 0; i < n; i++) dots += '<i class="' + (i < game.scores[team] ? 'on' : '') + '"></i>';
+    return '<div class="row ' + cls + '"><span>' + label + '</span><span class="dots">' + dots + '</span><b>' + fa(game.scores[team]) + '</b></div>';
+  }
+  function showResult(res, id) {
+    var r = res.roundOver, won = r.winTeam === 0;
+    var title, line;
+    if (res.matchOver) {
+      title = won ? 'قهرمان' : 'باخت';
+      line = won ? 'شما و ' + NAMES[2] + ' بازی را بردید' : NAMES[1] + ' و ' + NAMES[3] + ' بازی را بردند';
+    } else if (r.hakemKot) {
+      title = 'حاکم‌کوت';
+      line = won ? 'تیم حاکم حتی یک دست هم نگرفت' : 'تیم شما حاکم بود و دستی نگرفت';
+    } else if (r.kot) {
+      title = 'کوت!';
+      line = won ? 'تیم شما هر هفت دست را برد' : 'حریف هر هفت دست را برد';
+    } else {
+      title = won ? 'بُرد' : 'باخت';
+      line = (won ? 'این دور را بردید؛ ' : 'این دور را باختید؛ ') + 'حکم: ' + (r.hokm.mode === 'suit' ? H.SUIT_FA[r.hokm.trump] : NT_INFO[r.hokm.mode][0]);
+    }
+    $('resultSheet').classList.toggle('lost', !won);
+    $('resTitle').textContent = title;
+    $('resLine').textContent = line;
+    $('resUs').textContent = fa(r.tricks[0]);
+    $('resThem').textContent = fa(r.tricks[1]);
+    $('resGain').textContent = fa(r.points) + ' امتیاز برای ' + (won ? 'تیم شما' : 'حریف');
+    $('resPips').innerHTML = '<span class="label">امتیاز بازی تا ' + fa(game.settings.target) + '</span>' +
+      pipsRow(0, 'us', 'ما') + pipsRow(1, 'them', 'حریف') +
+      (res.matchOver ? '' : '<span class="label">حاکم دست بعد: ' + (r.nextHakem === 0 ? 'شما' : NAMES[r.nextHakem]) + '</span>');
+    $('resNext').textContent = res.matchOver ? 'بازی دوباره' : 'دست بعد';
+    $('resultOverlay').hidden = false;
+    if (won) sfx.win(); else sfx.lose();
+    return new Promise(function (resolve) { resultResolve = resolve; }).then(function (act) {
+      alive(id);
+      $('resultOverlay').hidden = true;
+      if (act === 'home') { stopGame(); show('home'); throw CANCEL; }
+      if (res.matchOver) { newMatch(); throw CANCEL; }
+    });
+  }
+  var resultResolve = null;
+  $('resNext').addEventListener('click', function () { if (resultResolve) { var r = resultResolve; resultResolve = null; r('next'); } });
+  $('resHome').addEventListener('click', function () { if (resultResolve) { var r = resultResolve; resultResolve = null; r('home'); } });
+
+  async function run(id) {
+    try {
+      for (;;) {
+        alive(id);
+        if (game.phase === 'idle' || game.phase === 'roundOver') await beginRound(id);
+        else if (game.phase === 'chooseHokm') await hokmStep(id);
+        else if (game.phase === 'play') await playStep(id);
+        else return;
+      }
+    } catch (e) {
+      if (e !== CANCEL) { console.error(e); boardMsg('خطایی پیش آمد؛ از منو بازی جدید را شروع کنید'); }
+    }
+  }
+  function stopGame() {
+    runId++;
+    pendingPick = null; hokmResolve = null; resultResolve = null; selected = -1;
+    setPaused(false);
+    ['hokmOverlay', 'resultOverlay', 'menuOverlay', 'lastOverlay'].forEach(function (o) { $(o).hidden = true; });
+    $('turnPill').hidden = true;
+  }
+  function enterGame() {
+    stopGame();
+    show('game');
+    clearBoard(); boardMsg('');
+    renderScore(); renderChip(); renderSeats(-1);
+    if (game.phase === 'play') { renderTrick(); renderHand(); }
+    else handEl.innerHTML = '';
+    run(runId);
+  }
+  function newMatch() {
+    store.del(GKEY);
+    game = new H.HokmGame(gameSettings());
+    enterGame();
+  }
+  function continueMatch() {
+    var o = store.get(GKEY);
+    if (!o) return newMatch();
+    try { game = H.HokmGame.fromJSON(o); } catch (e) { return newMatch(); }
+    game.settings.difficulty = settings.difficulty;
+    enterGame();
+  }
+  $('btnNew').addEventListener('click', newMatch);
+  $('btnContinue').addEventListener('click', continueMatch);
+
+  /* ---------- in-game menu & last trick ---------- */
+  function openMenu() { setPaused(true); $('menuOverlay').hidden = false; }
+  function closeMenu() { $('menuOverlay').hidden = true; setPaused(false); }
+  $('btnMenu').addEventListener('click', openMenu);
+  $('menuOverlay').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-menu]');
+    if (!b) { if (e.target === $('menuOverlay')) closeMenu(); return; }
+    var a = b.getAttribute('data-menu');
+    if (a === 'resume') closeMenu();
+    else if (a === 'settings' || a === 'rules') { $('menuOverlay').hidden = true; returnTo = 'game'; show(a); }
+    else if (a === 'new') { closeMenu(); newMatch(); }
+    else if (a === 'home') { stopGame(); show('home'); }
+  });
+  $('btnLast').addEventListener('click', function () {
+    var lt = game && game.tricks.length ? game.tricks[game.tricks.length - 1] : null;
+    var box = $('lastCards');
+    if (!lt) box.innerHTML = '<p class="hint">هنوز دستی تمام نشده است.</p>';
+    else {
+      box.innerHTML = lt.cards.map(function (c, i) {
+        var s = lt.seats[i];
+        return '<figure class="' + (s === lt.winner ? 'win' : '') + '">' + cardDiv(c) + '<figcaption>' + (s === 0 ? 'شما' : NAMES[s]) + '</figcaption></figure>';
+      }).join('');
+    }
+    setPaused(true);
+    $('lastOverlay').hidden = false;
+  });
+  function closeLast() { $('lastOverlay').hidden = true; setPaused(false); }
+  $('lastClose').addEventListener('click', closeLast);
+  $('lastOverlay').addEventListener('click', function (e) { if (e.target === $('lastOverlay')) closeLast(); });
+
+  /* ---------- Android back button ---------- */
+  window.hokmBack = function () {
+    if (!$('lastOverlay').hidden) { closeLast(); return true; }
+    if (!$('menuOverlay').hidden) { closeMenu(); return true; }
+    if (current === 'settings' || current === 'rules') { goBack(); return true; }
+    if (current === 'game') {
+      if (!$('hokmOverlay').hidden || !$('resultOverlay').hidden) return true;
+      openMenu(); return true;
+    }
+    return false;
+  };
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') window.hokmBack();
+  });
+  document.addEventListener('visibilitychange', function () { if (document.hidden) save(); });
+
+  show('home');
+})();
+</script>

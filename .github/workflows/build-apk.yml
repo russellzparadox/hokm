@@ -1,0 +1,54 @@
+name: Build APK
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Test rules and build the web game
+        run: |
+          node test/test-core.js
+          node build.js
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Collect APK
+        run: cp android/app/build/outputs/apk/release/app-release.apk hokm.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hokm-apk
+          path: hokm.apk
+
+      - name: Publish release (direct download link)
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v1.0.${{ github.run_number }}" hokm.apk \
+            --title "حکم 1.0.${{ github.run_number }}" \
+            --notes "APK ساخته‌شده از ${{ github.sha }}" \
+            --latest
