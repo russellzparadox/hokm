@@ -10,16 +10,27 @@ android {
         applicationId = "ir.hokm.game"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
+        versionName = "1.0." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")
+    }
+
+    // One fixed key for every build, so a new APK installs as an update over the old one.
+    signingConfigs {
+        create("hokm") {
+            storeFile = file("hokm-release.keystore")
+            storePassword = "hokmgame"
+            keyAlias = "hokm"
+            keyPassword = "hokmgame"
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
-            // Signed with the debug key so the APK installs right away.
-            // Before publishing to a store, create your own key (Build > Generate Signed App Bundle / APK).
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("hokm")
+        }
+        debug {
+            signingConfig = signingConfigs.getByName("hokm")
         }
     }
 
