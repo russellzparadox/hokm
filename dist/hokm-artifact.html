@@ -161,6 +161,12 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
 .hand .card.deal { animation: dealIn 0.32s ease-out backwards; }
 @keyframes dealIn { from { transform: translateY(-60px) rotate(-6deg); opacity: 0; } }
 .hand .card.nope { animation: nope 0.3s; }
+.hand .card { touch-action: none; }
+.hand .card.dragging { transition: none; z-index: 30; box-shadow: 0 0 0 3px var(--turq), 0 14px 26px rgba(0, 0, 0, 0.5); filter: none !important; }
+.board.drop-ready { box-shadow: inset 0 0 0 2px var(--turq), 0 0 0 4px rgba(46, 196, 182, 0.3); }
+.no-guide .hand.active .card:not(.legal) { filter: none; }
+.no-guide .hand .card.legal { top: 16px; }
+.no-guide .s0.empty-turn { box-shadow: none; }
 @keyframes nope { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
 .me-bar { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; font-weight: 700; min-height: 26px; }
 .me-bar svg { width: 18px; height: 18px; color: var(--gold); }
@@ -419,10 +425,12 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
     </div>
     <div class="group">
       <h2 id="sTap">انداختن برگ</h2>
+      <p class="note">می‌توانید برگ را هم بکشید و روی میز رها کنید.</p>
       <div class="seg two" role="group" aria-labelledby="sTap" data-set="tap">
         <button type="button" data-val="single">با یک لمس</button>
         <button type="button" data-val="double">با دو لمس (مطمئن‌تر)</button>
       </div>
+      <div class="opt"><div class="txt"><b>راهنمای بازی</b><small>برجسته‌کردن برگ‌های مجاز و پیام «باید … بازی کنید»</small></div><button class="switch" type="button" role="switch" data-set="guide" aria-label="راهنمای بازی"><span></span></button></div>
       <div class="opt"><div class="txt"><b>صدا</b></div><button class="switch" type="button" role="switch" data-set="sound" aria-label="صدا"><span></span></button></div>
     </div>
   </section>
@@ -1195,7 +1203,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
     set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } },
     del: function (k) { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } }
   };
-  var settings = Object.assign({ difficulty: 'hard', saras: true, naras: true, taknaras: true, kotNT: false, target: 7, speed: 'normal', tap: 'single', sound: true }, store.get(SKEY) || {});
+  var settings = Object.assign({ difficulty: 'hard', saras: true, naras: true, taknaras: true, kotNT: false, target: 7, speed: 'normal', tap: 'single', sound: true, guide: true }, store.get(SKEY) || {});
   function gameSettings() {
     return { difficulty: settings.difficulty, saras: settings.saras, naras: settings.naras, taknaras: settings.taknaras, kotNT: settings.kotNT, target: settings.target };
   }
@@ -1258,6 +1266,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
       sw.setAttribute('aria-checked', String(!!settings[sw.getAttribute('data-set')]));
     });
     $('tgtVal').textContent = fa(settings.target);
+    document.getElementById('app').classList.toggle('no-guide', !settings.guide);
   }
   function saveSettings() {
     store.set(SKEY, settings);
@@ -1441,7 +1450,8 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
       renderHand();
       var st = game.st;
       var pill = $('turnPill');
-      if (!st.trick.length) pill.textContent = 'نوبت شما: دست را شروع کنید';
+      if (!settings.guide) pill.textContent = 'نوبت شما';
+      else if (!st.trick.length) pill.textContent = 'نوبت شما: دست را شروع کنید';
       else {
         var led = H.suitOf(st.trick[0]);
         var has = st.hands[0].some(function (c) { return H.suitOf(c) === led; });
@@ -1451,24 +1461,71 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
       $('slot0').classList.add('empty-turn');
     }).then(function (c) { alive(id); return c; });
   }
+  function rejectCard(b) {
+    sfx.bad();
+    b.classList.remove('nope'); void b.offsetWidth; b.classList.add('nope');
+  }
+  function commitCard(c) {
+    var r = pendingPick; pendingPick = null; selected = -1;
+    $('turnPill').hidden = true;
+    $('slot0').classList.remove('empty-turn');
+    r(c);
+  }
+
+  /* drag a card onto the table */
+  var drag = null, suppressClick = false;
+  var boardEl = document.querySelector('.board');
+  function overBoard(x, y) {
+    var r = boardEl.getBoundingClientRect();
+    return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom + 30;
+  }
+  handEl.addEventListener('pointerdown', function (e) {
+    var b = e.target.closest('.card'); if (!b || !pendingPick || paused) return;
+    drag = { b: b, id: e.pointerId, x0: e.clientX, y0: e.clientY, moved: false };
+  });
+  window.addEventListener('pointermove', function (e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    var dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
+    if (!drag.moved) {
+      if (Math.abs(dx) + Math.abs(dy) < 10) return;
+      drag.moved = true;
+      drag.b.classList.add('dragging');
+      try { drag.b.setPointerCapture(drag.id); } catch (err) { /* ignore */ }
+    }
+    drag.b.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(1.08)';
+    boardEl.classList.toggle('drop-ready', overBoard(e.clientX, e.clientY));
+    e.preventDefault();
+  }, { passive: false });
+  function endDrag(e, cancelled) {
+    if (!drag || e.pointerId !== drag.id) return;
+    var d = drag; drag = null;
+    boardEl.classList.remove('drop-ready');
+    if (!d.moved) return;
+    suppressClick = true; setTimeout(function () { suppressClick = false; }, 50);
+    d.b.classList.remove('dragging');
+    d.b.style.transform = '';
+    if (cancelled || !pendingPick || paused) return;
+    var up = d.y0 - e.clientY;
+    if (!overBoard(e.clientX, e.clientY) && up < 120) return;
+    var c = +d.b.getAttribute('data-c');
+    if (game.legal(0).indexOf(c) < 0) { rejectCard(d.b); return; }
+    commitCard(c);
+  }
+  window.addEventListener('pointerup', function (e) { endDrag(e, false); });
+  window.addEventListener('pointercancel', function (e) { endDrag(e, true); });
+
   handEl.addEventListener('click', function (e) {
+    if (suppressClick) return;
     var b = e.target.closest('.card'); if (!b || !pendingPick || paused) return;
     var c = +b.getAttribute('data-c');
-    if (game.legal(0).indexOf(c) < 0) {
-      sfx.bad();
-      b.classList.remove('nope'); void b.offsetWidth; b.classList.add('nope');
-      return;
-    }
+    if (game.legal(0).indexOf(c) < 0) { rejectCard(b); return; }
     if (settings.tap === 'double' && selected !== c) {
       selected = c;
       handEl.querySelectorAll('.card.sel').forEach(function (x) { x.classList.remove('sel'); });
       b.classList.add('sel');
       return;
     }
-    var r = pendingPick; pendingPick = null; selected = -1;
-    $('turnPill').hidden = true;
-    $('slot0').classList.remove('empty-turn');
-    r(c);
+    commitCard(c);
   });
 
   /* ---------- hokm choice ---------- */
