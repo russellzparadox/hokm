@@ -31,6 +31,8 @@
   --paper: #F7F0E1;      /* card face */
   --ink: #1B1B1F;
   --gold-deep: #8A5A12;  /* court ranks on paper */
+  --card-edge: #B9A988;  /* thin card border */
+  --card-shadow: -3px 0 6px rgba(10, 18, 36, 0.28), 0 3px 0 rgba(0, 0, 0, 0.28);
   --red: #B42318;        /* red suit on paper */
   --red-dark: #FF7A6B;   /* red suit on dark */
   --text: #F3EBDD;
@@ -77,8 +79,8 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
 /* ---------- cards ---------- */
 .card {
   position: relative; width: var(--cw); height: calc(var(--cw) * 1.42); flex: none;
-  border: 0; padding: 0; border-radius: 9px; background: var(--paper); color: var(--ink);
-  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3); direction: ltr; font-family: var(--body);
+  border: 1px solid var(--card-edge); padding: 0; border-radius: 9px; background: var(--paper); color: var(--ink);
+  box-shadow: var(--card-shadow); direction: ltr; font-family: var(--body);
 }
 .card.red { color: var(--red); }
 .card .ci { position: absolute; top: 5%; left: 9%; display: flex; flex-direction: column; align-items: center; line-height: 1; }
@@ -180,7 +182,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
 .hand .card.legal { top: 2px; }
 .hand.no-anim .card { transition: none !important; }
 .hand.active .card:not(.legal) { filter: brightness(0.55) saturate(0.6); }
-.hand .card.sel { top: -8px; box-shadow: 0 0 0 3px var(--gold), 0 3px 0 rgba(0, 0, 0, 0.3); }
+.hand .card.sel { top: -8px; box-shadow: 0 0 0 3px var(--gold), var(--card-shadow); }
 .hand .card.deal { animation: dealIn 0.32s ease-out backwards; }
 @keyframes dealIn { from { transform: translateY(-60px) rotate(-6deg); opacity: 0; } }
 .hand .card.nope { animation: nope 0.3s; }
@@ -204,7 +206,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
 .hokm-sheet h2 { font-size: 32px; }
 .hokm-sheet .sub { margin: -8px 0 0; text-align: center; font-size: 14px; color: var(--muted); }
 .five { display: flex; justify-content: center; direction: ltr; --cw: clamp(52px, 15vw, 66px); padding-top: 6px; }
-.five .card { margin: 0 -7px; transform-origin: 50% 150%; box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3), -2px 0 4px rgba(0, 0, 0, 0.12); }
+.five .card { margin: 0 -7px; transform-origin: 50% 150%; }
 .five .card:nth-child(1) { transform: rotate(-14deg) translateY(6px); }
 .five .card:nth-child(2) { transform: rotate(-7deg) translateY(1px); }
 .five .card:nth-child(4) { transform: rotate(7deg) translateY(1px); }
