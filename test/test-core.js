@@ -208,4 +208,20 @@ t('leader does not cash a side ace on the first trick', () => {
   assert.notStrictEqual(H.heuristicMove(st, 0), C('A♣'));
 });
 
+t('passes the lead to partner when opponents showed they lack the top card', () => {
+  // Spades: seat 1 and seat 3 (opponents) each failed to beat a Q♠ as 4th/3rd hand earlier,
+  // so the A♠/K♠ must be with partner (seat 2). Seat 0 has no top cards and leads low spade.
+  const st = scenario([['5♠', '9♠', '4♣', '7♦'], ['2♣'], ['3♣'], ['4♦']], heartsT,
+    { leader: 0, turn: 0, tricksPlayed: 3, played: ['Q♠', 'J♠', '10♠', '2♠', '3♠', '6♠'] });
+  st.capH[1][0] = H.strength(C('Q♠'), 'suit');
+  st.capS[3][0] = H.strength(C('Q♠'), 'suit');
+  assert.strictEqual(H.heuristicMove(st, 0), C('5♠'));
+});
+t('failing to win as 4th hand caps that suit', () => {
+  const st = scenario([['Q♣'], ['3♣'], ['2♦'], ['5♣', 'A♣']], heartsT,
+    { leader: 0, turn: 0, tricksPlayed: 2 });
+  H.applyMove(st, 0, C('Q♣')); H.applyMove(st, 1, C('3♣')); H.applyMove(st, 2, C('2♦')); H.applyMove(st, 3, C('5♣'));
+  assert.strictEqual(st.capH[3][2], H.strength(C('Q♣'), 'suit'));
+});
+
 console.log(`rules: ${pass} tests passed`);

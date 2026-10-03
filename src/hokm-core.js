@@ -134,6 +134,9 @@
       voids: [new Uint8Array(4), new Uint8Array(4), new Uint8Array(4), new Uint8Array(4)],
       calls: [-1, -1, -1, -1],   // suit each player asked for by discarding a high card (خواستن)
       leads: [-1, -1, -1, -1],   // first suit each player led
+      // Highest strength a player can still hold in a suit, learned from failing to win a trick:
+      capH: [[99, 99, 99, 99], [99, 99, 99, 99], [99, 99, 99, 99], [99, 99, 99, 99]],   // 4th hand: sure
+      capS: [[99, 99, 99, 99], [99, 99, 99, 99], [99, 99, 99, 99], [99, 99, 99, 99]],   // 3rd hand: likely
       over: false,
       winTeam: -1,
       tricksPlayed: 0,
@@ -155,6 +158,8 @@
       voids: st.voids.map(function (v) { return v.slice(); }),
       calls: st.calls.slice(),
       leads: st.leads.slice(),
+      capH: st.capH.map(function (a) { return a.slice(); }),
+      capS: st.capS.map(function (a) { return a.slice(); }),
       over: st.over,
       winTeam: st.winTeam,
       tricksPlayed: st.tricksPlayed,
@@ -175,6 +180,15 @@
       if (cs !== st.hokm.trump && st.calls[seat] < 0 && isSignalCard(card, st.hokm.mode)) st.calls[seat] = cs;
     }
     if (led < 0 && st.leads[seat] < 0) st.leads[seat] = suitOf(card);
+    // Followed suit but did not take an opponent's trick: they hold nothing above the winning card.
+    var pos0 = st.trick.length;   // card not pushed yet
+    if (led >= 0 && suitOf(card) === led && (pos0 === 3 || pos0 === 2)) {
+      var wi0 = trickWinnerIndex(st.trick, st.hokm), wc = st.trick[wi0];
+      if (suitOf(wc) === led && teamOf(st.trickSeats[wi0]) !== teamOf(seat) && !beats(card, wc, st.hokm)) {
+        var capArr = pos0 === 3 ? st.capH : st.capS, wv = strength(wc, st.hokm.mode);
+        if (wv < capArr[seat][led]) capArr[seat][led] = wv;
+      }
+    }
     if (st.calls[seat] >= 0 && led === st.calls[seat] && suitOf(card) !== led) st.calls[seat] = -1; // void now
     st.trick.push(card);
     st.trickSeats.push(seat);
@@ -199,7 +213,7 @@
   /* ------------------------------------------------------- heuristic player */
 
   // Human conventions the AI follows (switchable for testing).
-  var CONV = { calls: true, holdCash: true, holdDuck: true, thirdHigh: true, returnLead: true, shorten: true };
+  var CONV = { passLead: true, calls: true, holdCash: true, holdDuck: true, thirdHigh: true, returnLead: true, shorten: true };
 
   // A rule-based player that only uses public information plus its own hand.
   // Used directly by the easy/medium AI and as the playout policy of the hard AI.
@@ -309,6 +323,12 @@
       for (i = 0; i < hand.length; i++) bySuit[suitOf(hand[i])].push(hand[i]);
       for (s = 0; s < 4; s++) bySuit[s].sort(function (a, b) { return str(b) - str(a); });
       var opps = [(seat + 1) & 3, (seat + 3) & 3];
+      var topOutOf = function (su) { var m = -1; for (var q = 0; q < outStr[su].length; q++) if (outStr[su][q] > m) m = outStr[su][q]; return m; };
+      // Can this player hold the top outstanding card of the suit?
+      var mayHoldTop = function (p, su) {
+        var tp = topOutOf(su);
+        return !voids[p][su] && st.capH[p][su] >= tp && st.capS[p][su] >= tp;
+      };
       var oppCanRuff = function (su) {
         if (t < 0 || su === t || outCnt[t] === 0) return false;
         for (var k = 0; k < 2; k++) {
@@ -338,7 +358,8 @@
       if (cash !== null) return cash;
       // Partner asked for a suit (خواستن): lead it now that my winners are cashed.
       var pc = st.calls[partner];
-      if (CONV.calls && pc >= 0 && bySuit[pc].length && !voids[partner][pc] && !oppCanRuff(pc)) {
+      if (CONV.calls && pc >= 0 && bySuit[pc].length && !voids[partner][pc] && !oppCanRuff(pc) &&
+          (higherOut(bySuit[pc][0]) === 0 || mayHoldTop(partner, pc))) {
         var pcs = bySuit[pc];
         return higherOut(pcs[0]) === 0 ? pcs[0] : pcs[pcs.length - 1];
       }
@@ -347,6 +368,18 @@
           if (s === t || !bySuit[s].length) continue;
           if (voids[partner][s] && !voids[opps[0]][s] && !voids[opps[1]][s]) return bySuit[s][bySuit[s].length - 1];
         }
+      }
+      // Pass the lead: the opponents showed they can't hold the top card of a suit, so partner has it.
+      if (CONV.passLead) {
+        var passS = -1, passV = -1;
+        for (s = 0; s < 4; s++) {
+          if (s === t || !bySuit[s].length || outCnt[s] === 0 || oppCanRuff(s)) continue;
+          if (higherOut(bySuit[s][0]) === 0) continue;                  // I hold the top: cashing covers it
+          if (!mayHoldTop(partner, s) || mayHoldTop(opps[0], s) || mayHoldTop(opps[1], s)) continue;
+          var pv = outCnt[s] - bySuit[s].length;
+          if (pv > passV) { passV = pv; passS = s; }
+        }
+        if (passS >= 0) return bySuit[passS][bySuit[passS].length - 1];
       }
       // Return partner's suit.
       var pl = st.leads[partner];
@@ -428,8 +461,11 @@
       var relax = attempt >= 25;
       shuffle(unknown, rng);
       var elig = unknown.map(function (card) {
-        var s = suitOf(card), e = [];
-        for (var k = 0; k < 3; k++) if (relax || !st.voids[others[k]][s]) e.push(others[k]);
+        var s = suitOf(card), v = strength(card, st.hokm.mode), e = [];
+        for (var k = 0; k < 3; k++) {
+          var p = others[k];
+          if (relax || (!st.voids[p][s] && v <= st.capH[p][s])) e.push(p);
+        }
         return e;
       });
       var order = unknown.map(function (_, idx) { return idx; });
@@ -446,6 +482,7 @@
       unknown.forEach(function (cd) { var su = suitOf(cd), v = strength(cd, hm.mode); if (v > topOut[su]) topOut[su] = v; });
       var bias = function (p, card) {
         var su = suitOf(card);
+        if (strength(card, hm.mode) > st.capS[p][su]) return 0.25;
         if (st.calls[p] === su) {
           var v = strength(card, hm.mode);
           if (v === topOut[su]) return 6;
@@ -749,7 +786,7 @@
         trick: st.trick, trickSeats: st.trickSeats, tricks: st.tricks,
         played: Array.prototype.slice.call(st.played),
         voids: st.voids.map(function (v) { return Array.prototype.slice.call(v); }),
-        calls: st.calls, leads: st.leads,
+        calls: st.calls, leads: st.leads, capH: st.capH, capS: st.capS,
         over: st.over, winTeam: st.winTeam, tricksPlayed: st.tricksPlayed
       } : null
     };
@@ -768,6 +805,7 @@
         played: Uint8Array.from(s.played),
         voids: s.voids.map(function (v) { return Uint8Array.from(v); }),
         calls: s.calls || [-1, -1, -1, -1], leads: s.leads || [-1, -1, -1, -1],
+        capH: s.capH || [[99, 99, 99, 99], [99, 99, 99, 99], [99, 99, 99, 99], [99, 99, 99, 99]], capS: s.capS || [[99, 99, 99, 99], [99, 99, 99, 99], [99, 99, 99, 99], [99, 99, 99, 99]],
         over: s.over, winTeam: s.winTeam, tricksPlayed: s.tricksPlayed, lastTrick: null
       };
     }

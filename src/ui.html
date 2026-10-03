@@ -161,6 +161,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
 .hand { position: relative; height: calc(var(--cw) * 1.42 + 26px); direction: ltr; }
 .hand .card { position: absolute; top: 16px; transform: translateY(var(--dy, 0px)) rotate(var(--rot, 0deg)); transform-origin: 50% 140%; transition: top 0.15s ease-out, filter 0.15s, left 0.25s ease-out, transform 0.25s ease-out; }
 .hand .card.legal { top: 2px; }
+.hand.no-anim .card { transition: none !important; }
 .hand.active .card:not(.legal) { filter: brightness(0.55) saturate(0.6); }
 .hand .card.sel { top: -8px; box-shadow: 0 0 0 3px var(--gold), 0 3px 0 rgba(0, 0, 0, 0.3); }
 .hand .card.deal { animation: dealIn 0.32s ease-out backwards; }
@@ -730,9 +731,31 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
       return H.strength(b, mode) - H.strength(a, mode);
     });
   }
+  function cardCls(c, legal) {
+    var cls = cardClass(c);
+    if (legal && legal.indexOf(c) >= 0) cls += ' legal';
+    if (c === selected) cls += ' sel';
+    return cls;
+  }
   function renderHand(dealFrom) {
     var cards = sortCards(myCards());
     var legal = pendingPick ? game.legal(0) : null;
+    // Same cards (or the same minus the ones just played): update in place so the fan doesn't jump.
+    var shown = Array.prototype.map.call(handEl.querySelectorAll('.card'), function (b) { return +b.getAttribute('data-c'); });
+    var kept = shown.filter(function (c) { return cards.indexOf(c) >= 0; });
+    if (dealFrom === undefined && shown.length && kept.length === cards.length && kept.every(function (c, i) { return c === cards[i]; })) {
+      handCards = cards;
+      Array.prototype.forEach.call(handEl.querySelectorAll('.card'), function (b) {
+        var c = +b.getAttribute('data-c');
+        if (cards.indexOf(c) < 0) { b.remove(); return; }
+        var cls = cardCls(c, legal);
+        if (b.classList.contains('dragging')) cls += ' dragging';
+        b.className = cls;
+      });
+      handEl.classList.toggle('active', !!legal);
+      layoutHand();
+      return;
+    }
     handCards = cards;
     var html = '';
     cards.forEach(function (c, i) {
@@ -746,7 +769,10 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
     });
     handEl.innerHTML = html;
     handEl.classList.toggle('active', !!legal);
+    handEl.classList.add('no-anim');      // place new cards straight into the fan
     layoutHand();
+    void handEl.offsetWidth;
+    handEl.classList.remove('no-anim');
   }
   function layoutHand() {
     var btns = handEl.querySelectorAll('.card');
