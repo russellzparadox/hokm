@@ -1947,9 +1947,9 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
     save();
     sfx.card();
     putOnBoard(p, card, true);
-    if (kind) await fxFire(kind, p, id);
     renderSeats(-1);
     if (p === 0) renderHand();
+    if (kind) await fxFire(kind, p, id);
     if (res.trickDone) {
       await sleep(300, id);
       var wEl = $('slot' + res.winner).querySelector('.card');
