@@ -115,6 +115,12 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
 .seat.hakem .crown { display: block; }
 .seat .nm { font-size: 13px; font-weight: 700; line-height: 1.3; }
 .seat .sub { font-size: 11px; color: var(--muted); line-height: 1.3; }
+.call { display: inline-flex; align-items: center; gap: 3px; margin-top: 3px; height: 20px; padding: 0 8px; border-radius: 10px; background: var(--lapis-3); box-shadow: inset 0 0 0 1px var(--gold); color: var(--gold); font-size: 11px; font-weight: 700; white-space: nowrap; animation: pop 0.25s ease-out; }
+.call b { font-size: 14px; color: var(--text); font-weight: 400; }
+.call b.r { color: var(--red-dark); }
+.me-bar .call { margin: 0 6px 0 0; }
+.seat-side .call { flex-direction: column; height: auto; padding: 3px 6px; line-height: 1.15; font-size: 10px; border-radius: 9px; }
+.no-guide .call { display: none; }
 .seat.turn .sub::after { content: "در حال فکر…"; display: block; color: var(--turq); }
 .seat.turn.you .sub::after { content: ""; }
 .seat-top { justify-content: center; padding-top: 10px; }
@@ -457,6 +463,21 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
         <li>نرس: <span class="order">2 › 3 › 4 › … › K › A</span></li>
         <li>تک‌نرس: <span class="order">A › 2 › 3 › … › Q › K</span></li>
       </ul></div>
+    <div class="group"><h2>علامت دادن به یار (خواستن)</h2>
+      <ul>
+        <li>وقتی خال زمین را ندارید و حکم هم نمی‌زنید، اگر یک برگ بالا (۸ به بالا) از خالی بیندازید، یعنی آن خال را می‌خواهید و بالاترین برگش دست شماست.</li>
+        <li>یار کامپیوتری بعد از گرفتن دست‌های مطمئنش همان خال را برایتان بازی می‌کند. خودشان هم همین علامت را به شما می‌دهند.</li>
+        <li>برگ کوچک انداختن علامت نیست؛ فقط دورریختن است.</li>
+        <li>خال خواسته‌شدهٔ هر نفر با نشان «می‌خواهد» کنار اسمش دیده می‌شود (با خاموش کردن راهنما پنهان می‌شود).</li>
+      </ul></div>
+    <div class="group"><h2>شگردهایی که کامپیوتر به کار می‌برد</h2>
+      <ul>
+        <li>دست اول تک‌ها را رو نمی‌کند تا حریف نفهمد چه دارد.</li>
+        <li>نفر دوم کم می‌زند؛ نفر سوم اگر بتواند دست را ببرد، بالاترین برگش را می‌زند.</li>
+        <li>وقتی بالاترین حکم دستش است حکم می‌کشد، و دست یارش را نمی‌بُرد.</li>
+        <li>خالی را که یار شروع کرده برمی‌گرداند و خالی را که حریف خواسته بازی نمی‌کند.</li>
+        <li>برگ‌های بیرون‌آمده و خال‌هایی را که هر نفر تمام کرده می‌شمارد.</li>
+      </ul></div>
     <div class="group"><h2>امتیاز</h2>
       <ul>
         <li>بردن دور: ۱ امتیاز.</li>
@@ -610,11 +631,11 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
   /* ---------- rendering ---------- */
   var seatEls = [$('seat0'), $('seat1'), $('seat2'), $('seat3')];
   function seatMarkup(p) {
-    if (p === 0) return '<svg aria-hidden="true" class="crown-me" hidden><use href="#i-crown"/></svg><span>شما</span><span class="hk" hidden>حاکم</span>';
+    if (p === 0) return '<svg aria-hidden="true" class="crown-me" hidden><use href="#i-crown"/></svg><span>شما</span><span class="hk" hidden>حاکم</span><span class="call" hidden></span>';
     var initial = NAMES[p].charAt(0);
     var sub = p === 2 ? 'یار شما، <span class="cnt"></span>' : '<span class="cnt"></span>';
     return '<div class="av">' + initial + '<svg class="crown" aria-hidden="true"><use href="#i-crown"/></svg></div>' +
-      '<div><div class="nm">' + NAMES[p] + '</div><div class="sub">' + sub + '</div></div>';
+      '<div><div class="nm">' + NAMES[p] + '</div><div class="sub">' + sub + '</div><span class="call" hidden></span></div>';
   }
   for (var p0 = 0; p0 < 4; p0++) seatEls[p0].innerHTML = seatMarkup(p0);
 
@@ -630,6 +651,16 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
       el.classList.toggle('hakem', !!game && game.hakem === p);
       el.classList.toggle('turn', turn === p);
       el.querySelector('.cnt').textContent = fa(handCount(p)) + ' برگ';
+    }
+    for (var q = 0; q < 4; q++) {
+      var callEl = seatEls[q].querySelector('.call');
+      var cs = game && game.st && game.st.calls ? game.st.calls[q] : -1;
+      if (cs >= 0) {
+        var html = '<b class="' + (cs === 1 || cs === 3 ? 'r' : '') + '">' + SYM[cs] + '</b>می‌خواهد';
+        if (callEl.innerHTML !== html) callEl.innerHTML = html;
+        callEl.hidden = false;
+        callEl.title = (q === 0 ? 'شما ' : NAMES[q] + ' ') + H.SUIT_FA[cs] + ' خواسته است';
+      } else callEl.hidden = true;
     }
     var me = seatEls[0], isH = !!game && game.hakem === 0;
     me.querySelector('.crown-me').hidden = !isH;

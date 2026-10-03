@@ -109,6 +109,9 @@
 
   function isNT(hokm) { return hokm.mode !== 'suit'; }
 
+  // A discard counts as a call (خواستن) when the card is fairly high: 8 or above in normal order.
+  function isSignalCard(card, mode) { return strength(card, mode) >= 6; }
+
   // Points for the round winner. کوت = 2, حاکم‌کوت (hakem's team gets nothing) = 3.
   function roundPoints(winTeam, tricks, hakem, hokm, settings) {
     var lose = 1 - winTeam;
@@ -129,6 +132,8 @@
       tricks: [0, 0],
       played: new Uint8Array(52),
       voids: [new Uint8Array(4), new Uint8Array(4), new Uint8Array(4), new Uint8Array(4)],
+      calls: [-1, -1, -1, -1],   // suit each player asked for by discarding a high card (خواستن)
+      leads: [-1, -1, -1, -1],   // first suit each player led
       over: false,
       winTeam: -1,
       tricksPlayed: 0,
@@ -148,6 +153,8 @@
       tricks: st.tricks.slice(),
       played: st.played.slice(),
       voids: st.voids.map(function (v) { return v.slice(); }),
+      calls: st.calls.slice(),
+      leads: st.leads.slice(),
       over: st.over,
       winTeam: st.winTeam,
       tricksPlayed: st.tricksPlayed,
@@ -161,7 +168,14 @@
     var i = h.indexOf(card);
     h.splice(i, 1);
     var led = st.trick.length ? suitOf(st.trick[0]) : -1;
-    if (led >= 0 && suitOf(card) !== led) st.voids[seat][led] = 1;
+    if (led >= 0 && suitOf(card) !== led) {
+      st.voids[seat][led] = 1;
+      // Convention: discarding a high card (not ruffing) asks partner for that suit.
+      var cs = suitOf(card);
+      if (cs !== st.hokm.trump && st.calls[seat] < 0 && isSignalCard(card, st.hokm.mode)) st.calls[seat] = cs;
+    }
+    if (led < 0 && st.leads[seat] < 0) st.leads[seat] = suitOf(card);
+    if (st.calls[seat] >= 0 && led === st.calls[seat] && suitOf(card) !== led) st.calls[seat] = -1; // void now
     st.trick.push(card);
     st.trickSeats.push(seat);
     st.played[card] = 1;
@@ -183,6 +197,9 @@
   }
 
   /* ------------------------------------------------------- heuristic player */
+
+  // Human conventions the AI follows (switchable for testing).
+  var CONV = { calls: true, holdCash: true, holdDuck: true, thirdHigh: true, returnLead: true, shorten: true };
 
   // A rule-based player that only uses public information plus its own hand.
   // Used directly by the easy/medium AI and as the playout policy of the hard AI.
@@ -232,12 +249,34 @@
       }
       return b;
     }
+    var myCall = st.calls[seat];
+    // The suit I'd ask partner for: I hold its top card and at least one more, and a high card to throw.
+    function callCard(cards) {
+      if (myCall >= 0 || !CONV.calls) return -1;
+      var bestC = -1, bestV = -1;
+      for (var su = 0; su < 4; su++) {
+        if (su === t || suitCount[su] < 2 || outCnt[su] < 2) continue;
+        var inSuit = cards.filter(function (x) { return suitOf(x) === su; });
+        if (inSuit.length < 3) continue;
+        var top = highest(inSuit);
+        if (higherOut(top) !== 0) continue;
+        var sig = inSuit.filter(function (x) { return x !== top && isSignalCard(x, mode); });
+        if (!sig.length) continue;
+        var v = outCnt[su] + inSuit.length * 2;
+        if (v > bestV) { bestV = v; bestC = lowest(sig); }
+      }
+      return bestC;
+    }
     function discard(cards) {
+      var cc0 = callCard(cards);
+      if (cc0 >= 0) return cc0;
       var b = cards[0], bv = 1e9;
       for (var k = 0; k < cards.length; k++) {
         var cc = cards[k], cs = suitOf(cc);
         var v = str(cc);
         if (t >= 0 && cs === t) v += 40;
+        if (cs !== t && myCall < 0 && isSignalCard(cc, mode)) v += 14;   // don't send a false call
+        if (cs === myCall) v += 12;                                      // keep the suit I asked for
         if (higherOut(cc) === 0 && outCnt[cs] > 0) v += 18;
         if (t >= 0 && cs !== t) v += suitCount[cs] * 0.7;
         if (t < 0) v += suitCount[cs] * 0.9;
@@ -285,28 +324,43 @@
         var hakemTeam = teamOf(st.hakem) === myTeam;
         if (higherOut(topT) === 0 && (hakemTeam || bySuit[t].length >= outCnt[t])) return topT;
       }
-      // Cash sure winners in side suits.
+      // Cash sure winners in side suits (but hold side aces on the very first trick).
+      var firstTrick = st.tricksPlayed === 0;
       var cash = null, cashScore = -1;
       for (s = 0; s < 4; s++) {
         if (s === t || !bySuit[s].length) continue;
         var top = bySuit[s][0];
         if (higherOut(top) !== 0 || oppCanRuff(s)) continue;
+        if (CONV.holdCash && firstTrick && outCnt[s] >= 6) continue;
         var sc = outCnt[s] * 2 + bySuit[s].length;
         if (sc > cashScore) { cashScore = sc; cash = top; }
       }
       if (cash !== null) return cash;
-      // Lead a suit partner can ruff.
+      // Partner asked for a suit (خواستن): lead it now that my winners are cashed.
+      var pc = st.calls[partner];
+      if (CONV.calls && pc >= 0 && bySuit[pc].length && !voids[partner][pc] && !oppCanRuff(pc)) {
+        var pcs = bySuit[pc];
+        return higherOut(pcs[0]) === 0 ? pcs[0] : pcs[pcs.length - 1];
+      }
       if (t >= 0 && outCnt[t] > 0 && !voids[partner][t]) {
         for (s = 0; s < 4; s++) {
           if (s === t || !bySuit[s].length) continue;
           if (voids[partner][s] && !voids[opps[0]][s] && !voids[opps[1]][s]) return bySuit[s][bySuit[s].length - 1];
         }
       }
+      // Return partner's suit.
+      var pl = st.leads[partner];
+      if (CONV.returnLead && pl >= 0 && pl !== t && bySuit[pl].length && !oppCanRuff(pl) && !voids[partner][pl] && st.calls[opps[0]] !== pl && st.calls[opps[1]] !== pl) {
+        return bySuit[pl][bySuit[pl].length - 1];
+      }
       // Otherwise lead low from the best long suit.
       var bestS = -1, bestScore = -1e9;
       for (s = 0; s < 4; s++) {
         if (!bySuit[s].length) continue;
         var score = bySuit[s].length * 2;
+        if (st.calls[opps[0]] === s || st.calls[opps[1]] === s) score -= 6;  // opponents hold the top there
+        if (s === myCall) score -= 2;                                         // let partner lead it to me
+        if (CONV.shorten && t >= 0 && s !== t && bySuit[s].length === 1 && suitCount[t] >= 2 && higherOut(bySuit[s][0]) > 0) score += 3; // shorten for a ruff
         if (oppCanRuff(s)) score -= 12;
         if (s === t) score -= 6;
         if (t < 0 && voids[partner][s]) score -= 3;
@@ -327,14 +381,21 @@
     var winners = legal.filter(function (x) { return beats(x, curBest, hokm); });
     var dump = function () { return following ? lowest(legal) : discard(legal); };
 
+    var followWinners = winners.filter(function (x) { return suitOf(x) === led; });
     if (teamOf(curSeat) === myTeam) {
       if (!after.length || !canBeBeaten(curBest, after, led)) return dump();
+      // Third hand: partner may be beaten — play my highest card if it takes over.
+      if (CONV.thirdHigh && pos === 2 && followWinners.length) return highest(followWinners);
       var safeP = winners.filter(function (x) { return !canBeBeaten(x, after, led); });
       if (safeP.length) return cheapest(safeP);
       return dump();
     }
     if (!winners.length) return dump();
     if (!after.length) return cheapest(winners);
+    // Second hand on the first trick: keep the ace hidden and duck.
+    if (CONV.holdDuck && pos === 1 && following && st.tricksPlayed === 0 && led !== t) return lowest(legal);
+    // Third hand: if I can win, play my highest card.
+    if (CONV.thirdHigh && pos === 2 && followWinners.length) return highest(followWinners);
     var safe = winners.filter(function (x) { return !canBeBeaten(x, after, led); });
     if (safe.length) return cheapest(safe);
     if (pos === 1) {
@@ -381,7 +442,15 @@
       // The hakem picked the hokm from his first five cards: he is more likely
       // to hold trumps (or, in سرس/نرس/تک‌نرس, the strong cards of that mode).
       var hk = st.hakem, hm = st.hokm;
+      var topOut = [-1, -1, -1, -1];
+      unknown.forEach(function (cd) { var su = suitOf(cd), v = strength(cd, hm.mode); if (v > topOut[su]) topOut[su] = v; });
       var bias = function (p, card) {
+        var su = suitOf(card);
+        if (st.calls[p] === su) {
+          var v = strength(card, hm.mode);
+          if (v === topOut[su]) return 6;
+          if (v >= topOut[su] - 2) return 2;
+        }
         if (p !== hk || hk === seat) return 1;
         if (hm.mode === 'suit') return suitOf(card) === hm.trump ? 1.7 : 1;
         return strength(card, hm.mode) >= 10 ? 1.4 : 1;
@@ -479,7 +548,7 @@
     // Prefer the heuristic's card when it is as good as the best (keeps play natural).
     var h = heuristicMove(st, seat);
     var hi = moves.indexOf(h);
-    if (hi >= 0 && totals[hi] >= totals[best] - 1e-9) return h;
+    if (hi >= 0 && n > 0 && (totals[best] - totals[hi]) / n <= (ctx.margin === undefined ? 0.1 : ctx.margin)) return h;
     return moves[best];
   }
 
@@ -677,6 +746,7 @@
         trick: st.trick, trickSeats: st.trickSeats, tricks: st.tricks,
         played: Array.prototype.slice.call(st.played),
         voids: st.voids.map(function (v) { return Array.prototype.slice.call(v); }),
+        calls: st.calls, leads: st.leads,
         over: st.over, winTeam: st.winTeam, tricksPlayed: st.tricksPlayed
       } : null
     };
@@ -694,6 +764,7 @@
         trick: s.trick, trickSeats: s.trickSeats, tricks: s.tricks,
         played: Uint8Array.from(s.played),
         voids: s.voids.map(function (v) { return Uint8Array.from(v); }),
+        calls: s.calls || [-1, -1, -1, -1], leads: s.leads || [-1, -1, -1, -1],
         over: s.over, winTeam: s.winTeam, tricksPlayed: s.tricksPlayed, lastTrick: null
       };
     }
@@ -709,6 +780,6 @@
     heuristicMove: heuristicMove, pimcMove: pimcMove, sampleHands: sampleHands, playout: playout,
     hokmOptions: hokmOptions, sameHokm: sameHokm, chooseHokm: chooseHokm, chooseHokmMC: chooseHokmMC,
     chooseHokmSimple: chooseHokmSimple, chooseCard: chooseCard, distinctMoves: distinctMoves,
-    HokmGame: HokmGame
+    HokmGame: HokmGame, CONV: CONV
   };
 });

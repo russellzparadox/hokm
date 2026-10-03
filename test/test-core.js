@@ -163,4 +163,49 @@ t('sampled hands respect voids and counts', () => {
   }
 });
 
+
+/* ---------- conventions ---------- */
+function scenario(handsLbl, hokm, opts) {
+  const hands = handsLbl.map((h) => h.map(C));
+  const used = new Set([].concat(...hands));
+  const st = H.newRoundState(hands, hokm, opts.hakem || 0);
+  Object.assign(st, { leader: opts.leader, turn: opts.turn, tricksPlayed: opts.tricksPlayed || 0 });
+  (opts.played || []).map(C).forEach((c) => { st.played[c] = 1; });
+  (opts.trick || []).forEach(([seat, lbl]) => { st.trick.push(C(lbl)); st.trickSeats.push(seat); st.played[C(lbl)] = 1; });
+  if (opts.calls) st.calls = opts.calls;
+  return st;
+}
+const heartsT = { mode: 'suit', trump: 1 };
+t('partner leads the suit you asked for', () => {
+  const st = scenario([['2♠'], ['3♠'], ['5♦', '8♦', '4♣', '9♣', '3♠'.replace('3', '4')], ['6♠']], heartsT,
+    { leader: 2, turn: 2, tricksPlayed: 3, calls: [3, -1, -1, -1] });
+  assert.strictEqual(H.heuristicMove(st, 2), C('5♦'));
+});
+t('discarding a high card sets a call, a low one does not', () => {
+  const st = scenario([['K♠', '2♣'], ['A♦', 'Q♦', '5♦', '4♣', '9♣'], ['3♠'], ['4♠']], heartsT,
+    { leader: 0, turn: 0, tricksPlayed: 2 });
+  H.applyMove(st, 0, C('K♠'));
+  const c = H.heuristicMove(st, 1);
+  assert.strictEqual(c, C('Q♦'), 'asks for diamonds by throwing the queen');
+  H.applyMove(st, 1, c);
+  assert.strictEqual(st.calls[1], 3);
+  const st2 = scenario([['K♠'], ['5♦', '4♣'], ['3♠'], ['4♠']], heartsT, { leader: 0, turn: 0, tricksPlayed: 2 });
+  H.applyMove(st2, 0, C('K♠')); H.applyMove(st2, 1, C('4♣'));
+  assert.strictEqual(st2.calls[1], -1);
+});
+t('third hand plays its highest winning card', () => {
+  const st = scenario([['2♦'], ['3♦'], ['K♣', 'Q♣', '10♣', '2♠'], ['4♦']], heartsT,
+    { leader: 0, turn: 2, tricksPlayed: 4, trick: [[0, '5♣'], [1, '9♣']] });
+  assert.strictEqual(H.heuristicMove(st, 2), C('K♣'));
+});
+t('second hand keeps the ace hidden on the first trick', () => {
+  const st = scenario([['2♦'], ['A♣', '4♣', '9♦'], ['3♦'], ['4♦']], heartsT,
+    { leader: 0, turn: 1, tricksPlayed: 0, trick: [[0, '7♣']] });
+  assert.strictEqual(H.heuristicMove(st, 1), C('4♣'));
+});
+t('leader does not cash a side ace on the first trick', () => {
+  const st = scenario([['A♣', '5♣', '9♣', '3♦', '8♦'], ['2♠'], ['3♠'], ['4♠']], heartsT, { leader: 0, turn: 0, tricksPlayed: 0 });
+  assert.notStrictEqual(H.heuristicMove(st, 0), C('A♣'));
+});
+
 console.log(`rules: ${pass} tests passed`);
