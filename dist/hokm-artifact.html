@@ -276,6 +276,47 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
 .rules .group ul { margin: 0; padding-right: 18px; display: flex; flex-direction: column; gap: 4px; }
 .rules .order { direction: ltr; display: inline-block; font-weight: 700; color: var(--gold); }
 
+/* ---------- dramatic effects: برش and حکم لازم ---------- */
+@property --charge { syntax: '<number>'; inherits: true; initial-value: 0; }
+.fx { position: absolute; inset: -8px; z-index: 6; pointer-events: none; border-radius: 30px; --charge: 0; opacity: 0; transition: --charge 0.28s ease-out, opacity 0.2s; }
+.fx.on { opacity: 1; }
+.fx.live { transition: opacity 0.2s; }               /* follows the finger directly */
+.fx-boresh { --fxc: #FF5A3C; --fxs: rgba(255, 90, 60, 0.55); }
+.fx-lazem { --fxc: #E0B45C; --fxs: rgba(224, 180, 92, 0.55); }
+.fx .glow { position: absolute; inset: 0; border-radius: 30px; opacity: var(--charge);
+  box-shadow: 0 0 calc(var(--charge) * 44px) calc(var(--charge) * 10px) var(--fxs), inset 0 0 calc(var(--charge) * 70px) var(--fxs), inset 0 0 0 calc(2px + var(--charge) * 2px) var(--fxc); }
+.fx .veil { position: absolute; inset: 8px; border-radius: 22px; background: radial-gradient(circle at 50% 50%, transparent 30%, rgba(6, 12, 26, 0.75)); opacity: calc(var(--charge) * 0.9); }
+.fx .word { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center;
+  opacity: calc(var(--charge) * 0.5); transform: scale(calc(0.6 + var(--charge) * 0.35)) rotate(-7deg); }
+.fx .word b { font-family: var(--display); font-weight: 400; font-size: 54px; line-height: 1; color: var(--fxc); text-shadow: 0 3px 0 rgba(0, 0, 0, 0.45), 0 0 18px var(--fxs); white-space: nowrap; }
+.fx .word small { font-size: 14px; font-weight: 700; color: var(--text); text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6); }
+.fx .big { position: absolute; left: 50%; top: 50%; font-size: 150px; line-height: 1; color: var(--fxc); opacity: calc(var(--charge) * 0.16); transform: translate(-50%, -54%) scale(calc(0.7 + var(--charge) * 0.3)); }
+.fx .flash { position: absolute; inset: 8px; border-radius: 22px; background: #fff; opacity: 0; }
+.fx .slash { position: absolute; left: -15%; top: 50%; width: 130%; height: 7px; margin-top: -3px; border-radius: 4px; opacity: 0;
+  background: linear-gradient(90deg, transparent, #fff 20%, #FF7A6B 55%, transparent); transform: rotate(-30deg) scaleX(0); transform-origin: 0 50%; box-shadow: 0 0 16px #FF5A3C; }
+.fx .slash.s2 { transform: rotate(-30deg) translateY(18px) scaleX(0); height: 3px; }
+.fx .ring { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; border: 3px solid var(--fxc); opacity: 0; box-shadow: 0 0 14px var(--fxs); }
+.game.tense .board { animation: tense 0.12s linear infinite; }
+@keyframes tense { 25% { transform: translate(-1px, 1px); } 75% { transform: translate(1px, -1px); } }
+.fx.fire { --charge: 1; transition: none; }
+.fx.fire .word { opacity: 1; animation: stamp 0.55s cubic-bezier(0.2, 1.7, 0.4, 1) both; }
+.fx.fire .flash { animation: flash 0.45s ease-out both; }
+.fx.fire .big { animation: bigPulse 0.9s ease-out both; }
+.fx-boresh.fire .slash { animation: slash 0.42s cubic-bezier(0.6, 0, 0.2, 1) 0.04s both; }
+.fx-boresh.fire .slash.s2 { animation: slash2 0.42s cubic-bezier(0.6, 0, 0.2, 1) 0.12s both; }
+.fx-lazem.fire .ring { animation: ring 0.9s ease-out both; }
+.fx-lazem.fire .ring.r2 { animation-delay: 0.16s; }
+.fx-lazem.fire .ring.r3 { animation-delay: 0.32s; }
+.fx.fade { opacity: 0; transition: opacity 0.35s ease-in; }
+.game.shake { animation: shake 0.42s ease-out; }
+@keyframes stamp { 0% { transform: scale(2.4) rotate(-7deg); opacity: 0; } 60% { opacity: 1; } 100% { transform: scale(1) rotate(-7deg); opacity: 1; } }
+@keyframes flash { 0% { opacity: 0.75; } 100% { opacity: 0; } }
+@keyframes slash { 0% { opacity: 1; transform: rotate(-30deg) scaleX(0); } 70% { opacity: 1; transform: rotate(-30deg) scaleX(1); } 100% { opacity: 0; transform: rotate(-30deg) scaleX(1); } }
+@keyframes slash2 { 0% { opacity: 1; transform: rotate(-30deg) translateY(18px) scaleX(0); } 70% { opacity: 0.8; transform: rotate(-30deg) translateY(18px) scaleX(1); } 100% { opacity: 0; transform: rotate(-30deg) translateY(18px) scaleX(1); } }
+@keyframes ring { 0% { opacity: 1; transform: scale(0.3); } 100% { opacity: 0; transform: scale(7); } }
+@keyframes bigPulse { 0% { opacity: 0.5; transform: translate(-50%, -54%) scale(1.5); } 100% { opacity: 0.18; transform: translate(-50%, -54%) scale(1); } }
+@keyframes shake { 15% { transform: translate(-6px, 3px); } 30% { transform: translate(5px, -4px); } 45% { transform: translate(-4px, -2px); } 60% { transform: translate(3px, 3px); } 80% { transform: translate(-1px, -1px); } }
+
 @media (max-height: 680px) {
   .hokm-sheet { gap: 10px; padding: 14px; }
   .hokm-sheet h2 { font-size: 26px; }
@@ -341,7 +382,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
     <div class="seat seat-top mate" id="seat2"></div>
     <div class="middle">
       <div class="seat seat-side" id="seat3"></div>
-      <div class="board"><div class="board-inner" id="boardInner">
+      <div class="board"><div class="fx" id="fx" aria-hidden="true"><div class="veil"></div><div class="glow"></div><div class="big" id="fxBig"></div><div class="flash"></div><div class="slash"></div><div class="slash s2"></div><div class="ring"></div><div class="ring r2"></div><div class="ring r3"></div><div class="word"><b id="fxWord"></b><small id="fxWho"></small></div></div><div class="board-inner" id="boardInner">
         <div class="slot s2" id="slot2"></div><div class="slot s1" id="slot1"></div>
         <div class="slot s3" id="slot3"></div><div class="slot s0" id="slot0"></div>
         <div class="board-msg" id="boardMsg" aria-live="polite"></div>
@@ -450,6 +491,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
         <button type="button" data-val="double">با دو لمس (مطمئن‌تر)</button>
       </div>
       <div class="opt"><div class="txt"><b>راهنمای بازی</b><small>برجسته‌کردن برگ‌های مجاز و پیام «باید … بازی کنید»</small></div><button class="switch" type="button" role="switch" data-set="guide" aria-label="راهنمای بازی"><span></span></button></div>
+      <div class="opt"><div class="txt"><b>جلوه‌های ویژه</b><small>انیمیشن بُرش و حکم لازم</small></div><button class="switch" type="button" role="switch" data-set="fx" aria-label="جلوه‌های ویژه"><span></span></button></div>
       <div class="opt"><div class="txt"><b>صدا</b></div><button class="switch" type="button" role="switch" data-set="sound" aria-label="صدا"><span></span></button></div>
     </div>
   </section>
@@ -1350,7 +1392,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
     set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } },
     del: function (k) { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } }
   };
-  var settings = Object.assign({ difficulty: 'hard', saras: true, naras: true, taknaras: true, kotNT: false, target: 7, speed: 'normal', tap: 'single', sound: true, guide: true }, store.get(SKEY) || {});
+  var settings = Object.assign({ difficulty: 'hard', saras: true, naras: true, taknaras: true, kotNT: false, target: 7, speed: 'normal', tap: 'single', sound: true, guide: true, fx: true }, store.get(SKEY) || {});
   function gameSettings() {
     return { difficulty: settings.difficulty, saras: settings.saras, naras: settings.naras, taknaras: settings.taknaras, kotNT: settings.kotNT, target: settings.target };
   }
@@ -1368,12 +1410,24 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
       o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + dur + 0.03);
     } catch (e) { /* audio unavailable */ }
   }
+  function sweep(f0, f1, dur, type, vol) {
+    if (!settings.sound) return;
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      var t = actx.currentTime, o = actx.createOscillator(), g = actx.createGain();
+      o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+      g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + dur + 0.03);
+    } catch (e) { /* audio unavailable */ }
+  }
   var sfx = {
     card: function () { beep(310, 0.07, 'triangle', 0.06); },
     tick: function () { beep(520, 0.04, 'square', 0.015); },
     win: function () { beep(660, 0.12, 'sine', 0.05); beep(880, 0.18, 'sine', 0.05, 0.1); },
     lose: function () { beep(240, 0.2, 'sine', 0.05); },
-    bad: function () { beep(140, 0.08, 'sawtooth', 0.03); }
+    bad: function () { beep(140, 0.08, 'sawtooth', 0.03); },
+    boresh: function () { sweep(1400, 90, 0.32, 'sawtooth', 0.07); beep(70, 0.35, 'square', 0.05, 0.05); },
+    lazem: function () { beep(55, 0.6, 'sine', 0.12); beep(110, 0.5, 'triangle', 0.05); beep(880, 0.25, 'sine', 0.04, 0.12); beep(1320, 0.3, 'sine', 0.03, 0.22); }
   };
 
   /* ---------- card markup ---------- */
@@ -1651,6 +1705,63 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
     r(c);
   }
 
+  /* ---------- dramatic effects ---------- */
+  var fxEl = $('fx'), fxState = { kind: null, seat: -1 };
+  // 'boresh' = trumping a non-trump lead, 'lazem' = leading a trump (حکم لازم)
+  function fxKind(p, c) {
+    if (!settings.fx || !game || !game.st || game.st.hokm.mode !== 'suit') return null;
+    var st = game.st, t = st.hokm.trump;
+    if (H.suitOf(c) !== t) return null;
+    if (!st.trick.length) return 'lazem';
+    return H.suitOf(st.trick[0]) !== t ? 'boresh' : null;
+  }
+  function fxLabel(kind, p) {
+    var t = game.st.hokm.trump;
+    $('fxWord').textContent = kind === 'boresh' ? 'بُرید!' : 'حکم لازم!';
+    $('fxWho').textContent = p === 0 ? 'شما' : NAMES[p];
+    $('fxBig').textContent = SYM[t];
+  }
+  // Step 1: builds up with the drag (0..1)
+  function fxCharge(kind, p, v) {
+    if (fxState.kind !== kind || fxState.seat !== p) { fxLabel(kind, p); fxState = { kind: kind, seat: p }; }
+    fxEl.className = 'fx on live fx-' + kind;
+    fxEl.style.setProperty('--charge', v.toFixed(3));
+    $('game').classList.toggle('tense', v > 0.8);
+  }
+  function fxCancel() {
+    $('game').classList.remove('tense');
+    if (!fxState.kind) return;
+    fxEl.classList.remove('live');
+    fxEl.style.setProperty('--charge', '0');
+    fxState = { kind: null, seat: -1 };
+    setTimeout(function () { if (!fxState.kind) fxEl.className = 'fx'; }, 300);
+  }
+  function fxReset() {
+    fxState = { kind: null, seat: -1 };
+    fxEl.className = 'fx'; fxEl.style.setProperty('--charge', '0');
+    $('game').classList.remove('tense', 'shake');
+  }
+  // Step 2: the card was played — finish the effect
+  async function fxFire(kind, p, id) {
+    var charged = fxState.kind === kind && fxState.seat === p;
+    if (!charged) {                           // AI or tap: quick build-up first
+      fxLabel(kind, p); fxState = { kind: kind, seat: p };
+      fxEl.className = 'fx on fx-' + kind; fxEl.style.setProperty('--charge', '0');
+      void fxEl.offsetWidth;
+      fxEl.style.setProperty('--charge', '1');
+      await sleep(260, id);
+    }
+    $('game').classList.remove('tense');
+    fxEl.className = 'fx on fire fx-' + kind;
+    var g = $('game'); g.classList.remove('shake'); void g.offsetWidth; g.classList.add('shake');
+    if (kind === 'boresh') sfx.boresh(); else sfx.lazem();
+    if (navigator.vibrate) { try { navigator.vibrate(kind === 'boresh' ? [30, 40, 60] : [80]); } catch (e) { /* no vibration */ } }
+    await sleep(950, id);
+    fxEl.classList.add('fade');
+    await sleep(330, id);
+    fxReset();
+  }
+
   /* drag a card onto the table */
   var drag = null, suppressClick = false;
   var boardEl = document.querySelector('.board');
@@ -1660,7 +1771,10 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
   }
   handEl.addEventListener('pointerdown', function (e) {
     var b = e.target.closest('.card'); if (!b || !pendingPick || paused) return;
-    drag = { b: b, id: e.pointerId, x0: e.clientX, y0: e.clientY, moved: false };
+    var dc = +b.getAttribute('data-c');
+    var bRect = boardEl.getBoundingClientRect();
+    drag = { b: b, id: e.pointerId, x0: e.clientX, y0: e.clientY, moved: false,
+      kind: game.legal(0).indexOf(dc) >= 0 ? fxKind(0, dc) : null, ty: bRect.top + bRect.height / 2 };
   });
   window.addEventListener('pointermove', function (e) {
     if (!drag || e.pointerId !== drag.id) return;
@@ -1673,6 +1787,10 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
     }
     drag.b.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(1.08)';
     boardEl.classList.toggle('drop-ready', overBoard(e.clientX, e.clientY));
+    if (drag.kind) {
+      var prog = Math.max(0, Math.min(1, (drag.y0 - e.clientY) / Math.max(60, drag.y0 - drag.ty)));
+      fxCharge(drag.kind, 0, prog);
+    }
     e.preventDefault();
   }, { passive: false });
   function endDrag(e, cancelled) {
@@ -1683,11 +1801,11 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
     suppressClick = true; setTimeout(function () { suppressClick = false; }, 50);
     d.b.classList.remove('dragging');
     d.b.style.transform = '';
-    if (cancelled || !pendingPick || paused) return;
+    if (cancelled || !pendingPick || paused) { fxCancel(); return; }
     var up = d.y0 - e.clientY;
-    if (!overBoard(e.clientX, e.clientY) && up < 120) return;
+    if (!overBoard(e.clientX, e.clientY) && up < 120) { fxCancel(); return; }   // changed their mind
     var c = +d.b.getAttribute('data-c');
-    if (game.legal(0).indexOf(c) < 0) { rejectCard(d.b); return; }
+    if (game.legal(0).indexOf(c) < 0) { fxCancel(); rejectCard(d.b); return; }
     commitCard(c);
   }
   window.addEventListener('pointerup', function (e) { endDrag(e, false); });
@@ -1824,10 +1942,12 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
       card = game.aiCard(p);
       await sleep(Math.max(0, Math.round(sp.ai * 0.65) - (Date.now() - t0)), id);
     }
+    var kind = fxKind(p, card);
     var res = game.play(p, card);
     save();
     sfx.card();
     putOnBoard(p, card, true);
+    if (kind) await fxFire(kind, p, id);
     renderSeats(-1);
     if (p === 0) renderHand();
     if (res.trickDone) {
@@ -1907,6 +2027,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
   function stopGame() {
     runId++;
     pendingPick = null; hokmResolve = null; resultResolve = null; selected = -1;
+    fxReset();
     setPaused(false);
     ['hokmOverlay', 'resultOverlay', 'menuOverlay', 'lastOverlay'].forEach(function (o) { $(o).hidden = true; });
     $('turnPill').hidden = true;

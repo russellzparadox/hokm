@@ -29,6 +29,19 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
+      - name: Write signing key from secrets
+        env:
+          KS_B64: ${{ secrets.HOKM_KEYSTORE_BASE64 }}
+          KS_PW: ${{ secrets.HOKM_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -z "$KS_B64" ] || [ -z "$KS_PW" ]; then
+            echo "::error::Add the HOKM_KEYSTORE_BASE64 and HOKM_KEYSTORE_PASSWORD secrets (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+          echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/hokm.keystore"
+          echo "HOKM_KEYSTORE_FILE=$RUNNER_TEMP/hokm.keystore" >> "$GITHUB_ENV"
+          echo "HOKM_KEYSTORE_PASSWORD=$KS_PW" >> "$GITHUB_ENV"
+
       - name: Build APK
         working-directory: android
         run: |
