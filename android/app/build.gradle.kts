@@ -15,9 +15,9 @@ android {
     }
 
     // One fixed key for every build, so a new APK installs as an update over the old one.
-    // The key is not in the repo: CI writes it from the HOKM_KEYSTORE_BASE64 secret.
-    val ksFile = file(System.getenv("HOKM_KEYSTORE_FILE") ?: "hokm-release.keystore")
-    val ksPass = System.getenv("HOKM_KEYSTORE_PASSWORD") ?: ""
+    // The key lives in the repo (public) so every build, local or CI, signs the same way.
+    val ksFile = file("hokm-release.keystore")
+    val ksPass = "hokmgame"
     signingConfigs {
         create("hokm") {
             storeFile = ksFile
@@ -30,7 +30,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            if (ksFile.exists()) signingConfig = signingConfigs.getByName("hokm")
+            signingConfig = signingConfigs.getByName("hokm")
         }
     }
 
