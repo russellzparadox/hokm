@@ -673,6 +673,9 @@
 
   HokmGame.prototype.options = function () { return hokmOptions(this.settings); };
 
+  // خال وسط: the third card dealt to the hakem's partner decides the hokm.
+  HokmGame.prototype.middleCard = function () { return this.hands[partnerOf(this.hakem)][2]; };
+
   HokmGame.prototype.aiHokm = function () {
     return chooseHokm(this.five, this.hakem, this.settings, this.rng, this.scores);
   };

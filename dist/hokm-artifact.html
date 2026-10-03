@@ -41,7 +41,7 @@ body::before {
 }
 button { font-family: inherit; color: inherit; cursor: pointer; }
 button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
-.app { position: relative; height: 100%; max-width: 480px; margin: 0 auto; }
+.app { position: relative; height: 100%; max-width: 480px; margin: 0 auto; overflow: hidden; }
 .screen { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 12px 16px; }
 
 /* ---------- shared controls ---------- */
@@ -159,8 +159,8 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
 
 .turn-row { display: flex; justify-content: center; min-height: 32px; }
 .pill { height: 32px; padding: 0 16px; border-radius: 16px; background: var(--turq); color: var(--turq-ink); font-size: 14px; font-weight: 800; display: flex; align-items: center; animation: pop 0.2s ease-out; }
-.hand { position: relative; height: calc(var(--cw) * 1.42 + 18px); direction: ltr; }
-.hand .card { position: absolute; top: 16px; transition: top 0.15s ease-out, filter 0.15s, left 0.25s ease-out; }
+.hand { position: relative; height: calc(var(--cw) * 1.42 + 26px); direction: ltr; }
+.hand .card { position: absolute; top: 16px; transform: translateY(var(--dy, 0px)) rotate(var(--rot, 0deg)); transform-origin: 50% 140%; transition: top 0.15s ease-out, filter 0.15s, left 0.25s ease-out, transform 0.25s ease-out; }
 .hand .card.legal { top: 2px; }
 .hand.active .card:not(.legal) { filter: brightness(0.55) saturate(0.6); }
 .hand .card.sel { top: -8px; box-shadow: 0 0 0 3px var(--gold), 0 3px 0 rgba(0, 0, 0, 0.3); }
@@ -186,7 +186,12 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
 .hokm-sheet .head svg { width: 26px; height: 26px; }
 .hokm-sheet h2 { font-size: 32px; }
 .hokm-sheet .sub { margin: -8px 0 0; text-align: center; font-size: 14px; color: var(--muted); }
-.five { display: flex; justify-content: center; gap: 6px; direction: ltr; --cw: clamp(48px, 14vw, 62px); }
+.five { display: flex; justify-content: center; direction: ltr; --cw: clamp(52px, 15vw, 66px); padding-top: 6px; }
+.five .card { margin: 0 -7px; transform-origin: 50% 150%; box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3), -2px 0 4px rgba(0, 0, 0, 0.12); }
+.five .card:nth-child(1) { transform: rotate(-14deg) translateY(6px); }
+.five .card:nth-child(2) { transform: rotate(-7deg) translateY(1px); }
+.five .card:nth-child(4) { transform: rotate(7deg) translateY(1px); }
+.five .card:nth-child(5) { transform: rotate(14deg) translateY(6px); }
 .panel { border-radius: 18px; background: var(--lapis); padding: 14px; display: flex; flex-direction: column; gap: 12px; }
 .panel h3 { margin: 0; font-size: 15px; font-weight: 700; }
 .suit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
@@ -194,6 +199,10 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
 .suit-grid button span { font-size: 28px; }
 .suit-grid button span.r { color: var(--red); }
 .suit-grid button[aria-pressed="true"], .nt-grid button[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--turq); }
+.mid-btn { height: 56px; border: 0; border-radius: 14px; background: transparent; box-shadow: inset 0 0 0 1.5px var(--turq); color: var(--turq); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; line-height: 1.4; }
+.mid-btn b { font-size: 16px; font-weight: 800; }
+.mid-btn small { font-size: 12px; color: var(--muted); }
+.mid-btn[aria-pressed="true"] { background: var(--lapis-3); box-shadow: inset 0 0 0 1.5px var(--turq), 0 0 0 3px var(--turq); }
 .divider { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; }
 .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 .nt-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
@@ -348,6 +357,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
         <div class="panel">
           <h3>خال حکم</h3>
           <div class="suit-grid" id="suitGrid"></div>
+          <button type="button" class="mid-btn" id="midBtn" aria-pressed="false"><b>خال وسط</b><small>خالِ برگ سومِ یار حکم می‌شود</small></button>
           <div class="divider" id="ntDivider">بی‌حکم، بدون برش</div>
           <div class="nt-grid" id="ntGrid"></div>
           <p class="hint" id="ntHint">در سرس، نرس و تک‌نرس هیچ خالی حکم نیست؛ فقط بالاترین برگِ خالِ زمین دست را می‌برد.</p>
@@ -451,6 +461,8 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
       <p>چهار نفر در دو تیم بازی می‌کنند؛ یار شما روبه‌روی شماست. هر تیمی زودتر هفت دست بگیرد، آن دور را می‌برد. بازی تا رسیدن به امتیاز پایان (پیش‌فرض ۷) ادامه دارد.</p></div>
     <div class="group"><h2>حاکم و حکم</h2>
       <p>در دور اول برگ‌ها رو به بالا پخش می‌شوند و اولین کسی که تک بگیرد حاکم است. حاکم پنج برگ اول را می‌بیند و حکم را اعلام می‌کند، بعد بقیهٔ برگ‌ها پخش می‌شود و حاکم دست اول را شروع می‌کند. اگر تیم حاکم ببازد، حاکمی به نفر بعدی (سمت راست حاکم) می‌رسد.</p></div>
+    <div class="group"><h2>خال وسط</h2>
+      <p>اگر حاکم نخواهد خودش حکم کند، «خال وسط» را می‌زند: برگ سومی که به یارش داده شده رو می‌شود و خال همان برگ حکم می‌شود.</p></div>
     <div class="group"><h2>بازی هر دست</h2>
       <ul>
         <li>باید از خالی که زمین آمده بازی کنید، اگر دارید.</li>
@@ -469,7 +481,6 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
         <li>وقتی خال زمین را ندارید و حکم هم نمی‌زنید، اگر یک برگ بالا (۸ به بالا) از خالی بیندازید، یعنی آن خال را می‌خواهید و بالاترین برگش دست شماست.</li>
         <li>یار کامپیوتری بعد از گرفتن دست‌های مطمئنش همان خال را برایتان بازی می‌کند. خودشان هم همین علامت را به شما می‌دهند.</li>
         <li>برگ کوچک انداختن علامت نیست؛ فقط دورریختن است.</li>
-        <li>خال خواسته‌شدهٔ هر نفر با نشان «می‌خواهد» کنار اسمش دیده می‌شود (با خاموش کردن راهنما پنهان می‌شود).</li>
       </ul></div>
     <div class="group"><h2>شگردهایی که کامپیوتر به کار می‌برد</h2>
       <ul>
@@ -1165,6 +1176,9 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
 
   HokmGame.prototype.options = function () { return hokmOptions(this.settings); };
 
+  // خال وسط: the third card dealt to the hakem's partner decides the hokm.
+  HokmGame.prototype.middleCard = function () { return this.hands[partnerOf(this.hakem)][2]; };
+
   HokmGame.prototype.aiHokm = function () {
     return chooseHokm(this.five, this.hakem, this.settings, this.rng, this.scores);
   };
@@ -1419,11 +1433,11 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
   /* ---------- rendering ---------- */
   var seatEls = [$('seat0'), $('seat1'), $('seat2'), $('seat3')];
   function seatMarkup(p) {
-    if (p === 0) return '<svg aria-hidden="true" class="crown-me" hidden><use href="#i-crown"/></svg><span>شما</span><span class="hk" hidden>حاکم</span><span class="call" hidden></span>';
+    if (p === 0) return '<svg aria-hidden="true" class="crown-me" hidden><use href="#i-crown"/></svg><span>شما</span><span class="hk" hidden>حاکم</span>';
     var initial = NAMES[p].charAt(0);
     var sub = p === 2 ? 'یار شما، <span class="cnt"></span>' : '<span class="cnt"></span>';
     return '<div class="av">' + initial + '<svg class="crown" aria-hidden="true"><use href="#i-crown"/></svg></div>' +
-      '<div><div class="nm">' + NAMES[p] + '</div><div class="sub">' + sub + '</div><span class="call" hidden></span></div>';
+      '<div><div class="nm">' + NAMES[p] + '</div><div class="sub">' + sub + '</div></div>';
   }
   for (var p0 = 0; p0 < 4; p0++) seatEls[p0].innerHTML = seatMarkup(p0);
 
@@ -1439,16 +1453,6 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
       el.classList.toggle('hakem', !!game && game.hakem === p);
       el.classList.toggle('turn', turn === p);
       el.querySelector('.cnt').textContent = fa(handCount(p)) + ' برگ';
-    }
-    for (var q = 0; q < 4; q++) {
-      var callEl = seatEls[q].querySelector('.call');
-      var cs = game && game.st && game.st.calls ? game.st.calls[q] : -1;
-      if (cs >= 0) {
-        var html = '<b class="' + (cs === 1 || cs === 3 ? 'r' : '') + '">' + SYM[cs] + '</b>می‌خواهد';
-        if (callEl.innerHTML !== html) callEl.innerHTML = html;
-        callEl.hidden = false;
-        callEl.title = (q === 0 ? 'شما ' : NAMES[q] + ' ') + H.SUIT_FA[cs] + ' خواسته است';
-      } else callEl.hidden = true;
     }
     var me = seatEls[0], isH = !!game && game.hakem === 0;
     me.querySelector('.crown-me').hidden = !isH;
@@ -1507,6 +1511,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
     return [];
   }
   function sortCards(cards) {
+    if (game && game.phase === 'chooseHokm') return cards.slice();   // keep dealt order while choosing hokm
     var st = game && game.st, mode = st ? st.hokm.mode : 'suit';
     var t = st && st.hokm.mode === 'suit' ? st.hokm.trump : -1;
     var order = t >= 0 ? [t, (t + 1) & 3, (t + 2) & 3, (t + 3) & 3] : [0, 1, 2, 3];
@@ -1538,9 +1543,15 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
     var btns = handEl.querySelectorAll('.card');
     if (!btns.length) return;
     var W = handEl.clientWidth, cw = btns[0].offsetWidth, n = btns.length;
-    var step = n > 1 ? Math.min(cw * 0.8, (W - cw) / (n - 1)) : 0;
+    var step = n > 1 ? Math.min(cw * 0.62, (W - cw - 36) / (n - 1)) : 0;
     var total = cw + step * (n - 1), start = Math.max(0, (W - total) / 2);
-    for (var i = 0; i < n; i++) btns[i].style.left = (start + i * step) + 'px';
+    var spread = n > 1 ? Math.min(6, 30 / (n - 1)) : 0;   // degrees between neighbours
+    for (var i = 0; i < n; i++) {
+      var f = i - (n - 1) / 2;
+      btns[i].style.left = (start + i * step) + 'px';
+      btns[i].style.setProperty('--rot', (f * spread).toFixed(2) + 'deg');
+      btns[i].style.setProperty('--dy', (f * f * 0.5).toFixed(1) + 'px');
+    }
   }
   window.addEventListener('resize', function () { requestAnimationFrame(layoutHand); });
 
@@ -1635,7 +1646,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
   function humanHokm(id) {
     return new Promise(function (resolve) {
       hokmResolve = resolve; hokmPick = null;
-      var five = sortCards(game.hands[0].slice(0, 5));
+      var five = game.hands[0].slice(0, 5);
       $('fiveCards').innerHTML = five.map(function (c) { return cardDiv(c); }).join('');
       var sg = '';
       for (var s = 0; s < 4; s++) {
@@ -1655,10 +1666,11 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
   }
   function pickHokm(h, btn) {
     hokmPick = h;
-    document.querySelectorAll('#suitGrid button, #ntGrid button').forEach(function (b) { b.setAttribute('aria-pressed', String(b === btn)); });
+    document.querySelectorAll('#suitGrid button, #ntGrid button, #midBtn').forEach(function (b) { b.setAttribute('aria-pressed', String(b === btn)); });
     $('hokmConfirm').disabled = false;
-    $('hokmConfirm').textContent = 'اعلام حکم: ' + (h.mode === 'suit' ? H.SUIT_FA[h.trump] : NT_INFO[h.mode][0]);
+    $('hokmConfirm').textContent = h.mode === 'middle' ? 'رو کردن برگ وسط یار' : 'اعلام حکم: ' + (h.mode === 'suit' ? H.SUIT_FA[h.trump] : NT_INFO[h.mode][0]);
   }
+  $('midBtn').addEventListener('click', function () { pickHokm({ mode: 'middle' }, $('midBtn')); });
   $('suitGrid').addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b) return;
     pickHokm({ mode: 'suit', trump: +b.getAttribute('data-suit') }, b);
@@ -1709,6 +1721,17 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
       await frame(); alive(id);
       h = game.aiHokm();
       seatEls[game.hakem].classList.remove('turn');
+    }
+    if (h.mode === 'middle') {
+      var mid = game.middleCard(), mate = H.partnerOf(game.hakem);
+      clearBoard();
+      putOnBoard(mate, mid, true);
+      var mEl = $('slot' + mate).querySelector('.card'); if (mEl) mEl.classList.add('win');
+      boardMsg('برگ وسطِ ' + (mate === 0 ? 'شما' : NAMES[mate]) + '<em>' + SYM[H.suitOf(mid)] + ' ' + H.SUIT_FA[H.suitOf(mid)] + '</em>');
+      sfx.tick();
+      await sleep(1700, id);
+      clearBoard(); boardMsg('');
+      h = { mode: 'suit', trump: H.suitOf(mid) };
     }
     var before = myCards();
     game.setHokm(h);
