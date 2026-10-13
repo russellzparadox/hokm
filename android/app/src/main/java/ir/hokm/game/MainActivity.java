@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowManager;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -21,6 +22,48 @@ public class MainActivity extends Activity {
 
     private static final int BG = Color.rgb(0x0E, 0x1A, 0x33);
     private WebView web;
+    private FrameLayout rootView;
+    private final Relay relay = new Relay();
+
+    /** Bridge for the page: LAN relay (host side) and theme colours for the system bars. */
+    private final class Native {
+        @JavascriptInterface
+        public int startRelay() { return relay.start(); }
+
+        @JavascriptInterface
+        public void stopRelay() { relay.stop(); }
+
+        @JavascriptInterface
+        public String ips() { return Relay.localIps(); }
+
+        @JavascriptInterface
+        public void setBg(final String hex, final boolean light) {
+            runOnUiThread(() -> applyBg(hex, light));
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private void applyBg(String hex, boolean light) {
+        try {
+            int c = Color.parseColor(hex);
+            if (rootView != null) rootView.setBackgroundColor(c);
+            if (web != null) web.setBackgroundColor(c);
+            Window w = getWindow();
+            if (Build.VERSION.SDK_INT < 35) { w.setStatusBarColor(c); w.setNavigationBarColor(c); }
+            if (Build.VERSION.SDK_INT >= 30) {
+                android.view.WindowInsetsController ic = w.getInsetsController();
+                if (ic != null) {
+                    int m = android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS | android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
+                    ic.setSystemBarsAppearance(light ? m : 0, m);
+                }
+            } else if (Build.VERSION.SDK_INT >= 23) {
+                int f = w.getDecorView().getSystemUiVisibility();
+                w.getDecorView().setSystemUiVisibility(light ? (f | android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR) : (f & ~android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR));
+            }
+        } catch (Exception ignored) {
+            // bad colour string
+        }
+    }
 
     @Override
     @SuppressWarnings("deprecation")
@@ -36,9 +79,11 @@ public class MainActivity extends Activity {
 
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(BG);
+        rootView = root;
 
         web = new WebView(this);
         web.setBackgroundColor(BG);
+        web.addJavascriptInterface(new Native(), "HokmNative");
         web.setOverScrollMode(WebView.OVER_SCROLL_NEVER);
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
@@ -101,6 +146,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        relay.stop();
         if (web != null) {
             web.destroy();
             web = null;

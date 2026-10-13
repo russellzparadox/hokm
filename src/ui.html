@@ -2,7 +2,7 @@
 <!--FONTS-->
 <style>
 /* Layout: one phone-shaped column — score bar, partner, carpet medallion flanked by opponents, your hand. */
-:root {
+:root, [data-theme="lapis"] {
   --lapis: #0E1A33;      /* night lapis ground */
   --lapis-2: #16264A;    /* panels */
   --lapis-3: #1E3260;    /* raised */
@@ -21,12 +21,92 @@
   --text: #F3EBDD;
   --muted: #A9B4CC;
   --scrim: rgba(6, 12, 26, 0.76);
+  --turq-rgb: 46, 196, 182;
+  --gold-rgb: 224, 180, 92;
+  --soft: #C9D1E3;       /* small print on raised panels */
+  --pip: #4A5B83;        /* empty score dot */
+  --msg-bg: rgba(14, 26, 51, 0.92);
+  --pat-op: 0.09;
+  --back-bg: var(--lapis-3);
   --display: "Lalezar", "Vazirmatn", Tahoma, sans-serif;
   --body: "Vazirmatn", Tahoma, "Segoe UI", sans-serif;
   --cw: clamp(46px, 15.2vw, 68px);   /* hand card width */
   --tw: clamp(42px, 12.6vw, 58px);   /* table card width */
   color-scheme: dark;
 }
+
+/* ---------- themes: each one just overrides the tokens above ---------- */
+[data-theme="golestan"] {   /* garden: emerald and rose-gold */
+  --lapis: #0A2A22; --lapis-2: #123A30; --lapis-3: #1B4E41; --line: #2A6150; --felt: #0F3A2F;
+  --turq: #6FE0A8; --turq-ink: #06241B; --gold: #F0C56A; --gold-deep: #8A5A12;
+  --turq-rgb: 111, 224, 168; --gold-rgb: 240, 197, 106;
+  --scrim: rgba(3, 18, 14, 0.78); --muted: #A9CBBD; --soft: #CFE6DB; --pip: #4B8571; --msg-bg: rgba(10, 42, 34, 0.93);
+}
+[data-theme="yalda"] {      /* pomegranate wine and amber */
+  --lapis: #2A0F1B; --lapis-2: #3B1727; --lapis-3: #512236; --line: #6B3249; --felt: #3F1629;
+  --turq: #7FE3CC; --turq-ink: #1E0A14; --gold: #F4B860; --gold-deep: #8E4F0E;
+  --turq-rgb: 127, 227, 204; --gold-rgb: 244, 184, 96;
+  --red: #A81C2E; --scrim: rgba(20, 5, 12, 0.8); --muted: #CDA9B8; --soft: #E6CBD6; --pip: #8A5069; --msg-bg: rgba(42, 15, 27, 0.93);
+}
+[data-theme="kavir"] {      /* desert dusk: sand, clay and turquoise tile */
+  --lapis: #2B1B10; --lapis-2: #3C271A; --lapis-3: #53361F; --line: #6E4A2E; --felt: #46301E;
+  --turq: #3FD0C0; --turq-ink: #0F1F1C; --gold: #F2A94E; --gold-deep: #8C4A0B;
+  --turq-rgb: 63, 208, 192; --gold-rgb: 242, 169, 78;
+  --scrim: rgba(18, 10, 4, 0.8); --muted: #CDB59C; --soft: #E8D6C2; --pip: #8B6A4A; --msg-bg: rgba(43, 27, 16, 0.93);
+}
+[data-theme="shab"] {       /* midnight: near-black, cyan and coral */
+  --lapis: #06070B; --lapis-2: #12141C; --lapis-3: #1D2130; --line: #2B3043; --felt: #0D1019;
+  --turq: #5CC8FF; --turq-ink: #031019; --gold: #FF9F6B; --gold-deep: #9A3F12;
+  --turq-rgb: 92, 200, 255; --gold-rgb: 255, 159, 107;
+  --paper: #F2F2F4; --card-edge: #B3B3BC; --scrim: rgba(0, 0, 0, 0.82); --muted: #98A0B5; --soft: #C6CBDA; --pip: #3E455C; --msg-bg: rgba(6, 7, 11, 0.94); --pat-op: 0.06;
+}
+[data-theme="kaghaz"] {     /* daylight: warm paper, teal and ochre */
+  --lapis: #EFE6D2; --lapis-2: #E3D6BC; --lapis-3: #D6C6A5; --line: #C2B08A; --felt: #CDBE9C;
+  --turq: #0F8F85; --turq-ink: #FFFFFF; --gold: #9A5F0C; --gold-deep: #8A5A12;
+  --turq-rgb: 15, 143, 133; --gold-rgb: 154, 95, 12;
+  --paper: #FFFDF7; --card-edge: #C9BA95; --card-shadow: -3px 0 6px rgba(70, 50, 20, 0.22), 0 3px 0 rgba(70, 50, 20, 0.22);
+  --red: #B42318; --red-dark: #C0301E; --text: #2A2620; --muted: #6E6350; --soft: #4B4333; --pip: #A8966F;
+  --scrim: rgba(40, 30, 14, 0.55); --msg-bg: rgba(255, 253, 247, 0.95); --pat-op: 0.12; --back-bg: #0F8F85;
+  color-scheme: light;
+}
+[data-theme="kaghaz"] .card.back { box-shadow: inset 0 0 0 3px var(--paper), 0 3px 0 rgba(70, 50, 20, 0.25); }
+[data-theme="kaghaz"] .card.back::after { background: var(--paper); }
+[data-theme="kaghaz"] .fx .veil { background: radial-gradient(circle at 50% 50%, transparent 30%, rgba(40, 30, 14, 0.55)); }
+[data-theme="kaghaz"] .fx .word small { color: #fff; }
+
+
+/* ---------- LAN lobby ---------- */
+.inp { width: 100%; height: 50px; border: 0; border-radius: 12px; padding: 0 14px; background: var(--lapis-2); color: var(--text); font: inherit; font-size: 17px; box-shadow: inset 0 0 0 1.5px var(--line); -webkit-user-select: text; user-select: text; }
+.group .inp, .group .plr, .group .roombox > div { background: var(--lapis); }
+.inp:focus { outline: 2px solid var(--turq); outline-offset: 1px; }
+.inp.ltr { direction: ltr; text-align: left; letter-spacing: 0.04em; }
+.err { margin: 0; padding: 10px 14px; border-radius: 12px; background: var(--lapis-2); color: var(--red-dark); font-size: 14px; box-shadow: inset 0 0 0 1.5px var(--red-dark); }
+.roombox { display: flex; gap: 12px; }
+.roombox > div { flex: 1; padding: 10px 12px; border-radius: 14px; background: var(--lapis-2); box-shadow: inset 0 0 0 1.5px var(--gold); text-align: center; }
+.roombox small { display: block; color: var(--muted); font-size: 12px; }
+.roombox b { display: block; font-size: 22px; color: var(--gold); direction: ltr; line-height: 1.5; }
+#roomCode { font-size: 30px; letter-spacing: 0.15em; }
+.plrs { display: flex; flex-direction: column; gap: 6px; }
+.plr { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 12px; background: var(--lapis-2); color: var(--muted); font-size: 14px; }
+.plr.on b { color: var(--turq); }
+#netChoose, #netHostCfg, #netRoom, #netJoinCfg, #netWait { display: flex; flex-direction: column; gap: 12px; }
+#netChoose[hidden], #netHostCfg[hidden], #netRoom[hidden], #netJoinCfg[hidden], #netWait[hidden] { display: none; }
+.opt .seg.two { width: 200px; flex: none; }
+.opt .seg.two button { height: 38px; font-size: 14px; }
+
+/* theme picker swatches (each swatch re-scopes the tokens through its own data-theme) */
+.themes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.theme-btn { border: 0; border-radius: 16px; padding: 8px; background: var(--lapis); color: var(--text); display: flex; flex-direction: column; align-items: center; gap: 6px; box-shadow: inset 0 0 0 1.5px var(--line); }
+.theme-btn[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--gold), 0 0 0 3px var(--turq); }
+.theme-btn .sw { position: relative; width: 100%; height: 54px; border-radius: 10px; background: var(--felt); box-shadow: inset 0 0 0 1px var(--gold); overflow: hidden; }
+.theme-btn .sw i { position: absolute; top: 9px; width: 22px; height: 31px; border-radius: 4px; background: var(--paper); box-shadow: inset 0 0 0 1px var(--card-edge); }
+.theme-btn .sw i:nth-child(1) { left: 14%; transform: rotate(-9deg); }
+.theme-btn .sw i:nth-child(2) { left: 38%; background: var(--back-bg); box-shadow: inset 0 0 0 2px var(--paper); }
+.theme-btn .sw i:nth-child(3) { right: 14%; transform: rotate(9deg); }
+.theme-btn .sw u { position: absolute; bottom: 5px; width: 9px; height: 9px; border-radius: 50%; text-decoration: none; }
+.theme-btn .sw u:nth-of-type(1) { left: 8px; background: var(--turq); }
+.theme-btn .sw u:nth-of-type(2) { right: 8px; background: var(--gold); }
+.theme-btn b { font-size: 13px; font-weight: 700; }
 [hidden] { display: none !important; }
 html { height: 100%; box-sizing: border-box; background: var(--lapis); }
 *, *::before, *::after { box-sizing: border-box; }
@@ -37,8 +117,10 @@ body {
   -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none;
 }
 body::before {
-  content: ""; position: fixed; inset: 0; pointer-events: none; opacity: 0.09;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56'%3E%3Cpath d='M16 16H40V40H16Z M28 11L45 28L28 45L11 28Z' fill='none' stroke='%23E0B45C' stroke-width='1.2'/%3E%3C/svg%3E");
+  content: ""; position: fixed; inset: 0; pointer-events: none; opacity: var(--pat-op);
+  background: var(--gold);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56'%3E%3Cpath d='M16 16H40V40H16Z M28 11L45 28L28 45L11 28Z' fill='none' stroke='%23000' stroke-width='1.2'/%3E%3C/svg%3E");
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56'%3E%3Cpath d='M16 16H40V40H16Z M28 11L45 28L28 45L11 28Z' fill='none' stroke='%23000' stroke-width='1.2'/%3E%3C/svg%3E");
 }
 button { font-family: inherit; color: inherit; cursor: pointer; }
 button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
@@ -71,8 +153,8 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
 .card .ci i { font-style: normal; font-size: calc(var(--w, var(--cw)) * 0.22); }
 .card .cs { position: absolute; right: 9%; bottom: 5%; line-height: 1; font-size: calc(var(--w, var(--cw)) * 0.56); }
 .card.court .ci b { color: var(--gold-deep); }
-.card.back { background: var(--lapis-3); box-shadow: inset 0 0 0 3px var(--paper), 0 3px 0 rgba(0, 0, 0, 0.3); display: flex; align-items: center; justify-content: center; }
-.card.back::after { content: ""; width: 55%; height: 55%; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Cpath d='M16 16H40V40H16Z M28 11L45 28L28 45L11 28Z' fill='none' stroke='%23E0B45C' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat; }
+.card.back { background: var(--back-bg); box-shadow: inset 0 0 0 3px var(--paper), 0 3px 0 rgba(0, 0, 0, 0.3); display: flex; align-items: center; justify-content: center; }
+.card.back::after { content: ""; width: 55%; height: 55%; background: var(--gold); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Cpath d='M16 16H40V40H16Z M28 11L45 28L28 45L11 28Z' fill='none' stroke='%23000' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Cpath d='M16 16H40V40H16Z M28 11L45 28L28 45L11 28Z' fill='none' stroke='%23000' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat; }
 
 /* ---------- home ---------- */
 .home { align-items: center; gap: 18px; padding-block: 40px 24px; overflow-y: auto; }
@@ -111,8 +193,8 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
 .seat { display: flex; align-items: center; gap: 8px; }
 .seat .av { position: relative; width: 44px; height: 44px; flex: none; border-radius: 50%; background: var(--lapis-3); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 17px; box-shadow: 0 0 0 2px var(--gold); transition: box-shadow 0.2s; }
 .seat.mate .av { box-shadow: 0 0 0 2px var(--turq); }
-.seat.turn .av { box-shadow: 0 0 0 3px var(--turq), 0 0 0 7px rgba(46, 196, 182, 0.25); animation: pulse 1.2s ease-in-out infinite; }
-@keyframes pulse { 50% { box-shadow: 0 0 0 3px var(--turq), 0 0 0 10px rgba(46, 196, 182, 0.08); } }
+.seat.turn .av { box-shadow: 0 0 0 3px var(--turq), 0 0 0 7px rgba(var(--turq-rgb), 0.25); animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 3px var(--turq), 0 0 0 10px rgba(var(--turq-rgb), 0.08); } }
 .seat .crown { position: absolute; top: -13px; left: 50%; width: 20px; height: 20px; margin-left: -10px; color: var(--gold); display: none; }
 .seat.hakem .crown { display: block; }
 .seat .nm { font-size: 13px; font-weight: 700; line-height: 1.3; }
@@ -130,15 +212,15 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
 .middle { display: grid; grid-template-columns: 58px minmax(0, 1fr) 58px; grid-template-rows: minmax(0, 1fr); align-items: center; gap: 6px; min-height: 0; direction: ltr; }
 .middle > * { direction: rtl; }
 .board { position: relative; justify-self: center; width: 100%; max-width: 270px; height: 100%; max-height: 320px; min-height: 196px; border-radius: 24px; background: var(--felt); box-shadow: inset 0 0 0 2px var(--gold); padding: 7px; }
-.board-inner { position: relative; width: 100%; height: 100%; border-radius: 17px; box-shadow: inset 0 0 0 1px rgba(46, 196, 182, 0.5); }
-.board-inner::before { content: ""; position: absolute; left: 50%; top: 50%; width: 46%; aspect-ratio: 1; max-width: 100%; transform: translate(-50%, -50%); opacity: 0.18; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Cpath d='M16 16H40V40H16Z M28 11L45 28L28 45L11 28Z' fill='none' stroke='%23E0B45C' stroke-width='1.4'/%3E%3Ccircle cx='28' cy='28' r='6' fill='none' stroke='%232EC4B6' stroke-width='1.2'/%3E%3C/svg%3E") center / contain no-repeat; }
+.board-inner { position: relative; width: 100%; height: 100%; border-radius: 17px; box-shadow: inset 0 0 0 1px rgba(var(--turq-rgb), 0.5); }
+.board-inner::before { content: ""; position: absolute; left: 50%; top: 50%; width: 46%; aspect-ratio: 1; max-width: 100%; transform: translate(-50%, -50%); opacity: 0.2; background: var(--gold); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Cpath d='M16 16H40V40H16Z M28 11L45 28L28 45L11 28Z' fill='none' stroke='%23000' stroke-width='1.6'/%3E%3Ccircle cx='28' cy='28' r='6' fill='none' stroke='%23000' stroke-width='1.4'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Cpath d='M16 16H40V40H16Z M28 11L45 28L28 45L11 28Z' fill='none' stroke='%23000' stroke-width='1.6'/%3E%3Ccircle cx='28' cy='28' r='6' fill='none' stroke='%23000' stroke-width='1.4'/%3E%3C/svg%3E") center / contain no-repeat; }
 .slot { position: absolute; width: var(--tw); height: calc(var(--tw) * 1.42); --cw: var(--tw); }
 .slot .card { --w: var(--tw); }
 .s2 { top: 5%; left: 50%; margin-left: calc(var(--tw) / -2); }
 .s0 { bottom: 5%; left: 50%; margin-left: calc(var(--tw) / -2); }
 .s1 { right: 5%; top: 50%; margin-top: calc(var(--tw) * -0.71); }
 .s3 { left: 5%; top: 50%; margin-top: calc(var(--tw) * -0.71); }
-.s0.empty-turn { border-radius: 9px; box-shadow: inset 0 0 0 1.5px rgba(46, 196, 182, 0.7); }
+.s0.empty-turn { border-radius: 9px; box-shadow: inset 0 0 0 1.5px rgba(var(--turq-rgb), 0.7); }
 .slot .card.from-0 { animation: in0 0.3s ease-out; }
 .slot .card.from-1 { animation: in1 0.3s ease-out; }
 .slot .card.from-2 { animation: in2 0.3s ease-out; }
@@ -154,7 +236,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
 .board-inner.to-2 .slot .card { transform: translateY(-170px) scale(0.6); opacity: 0; }
 .board-inner.to-3 .slot .card { transform: translateX(-150px) scale(0.6); opacity: 0; }
 .board-msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 0 18px; pointer-events: none; z-index: 3; }
-.board-msg span { background: rgba(14, 26, 51, 0.92); box-shadow: inset 0 0 0 1.5px var(--gold); border-radius: 14px; padding: 8px 14px; font-size: 15px; font-weight: 700; line-height: 1.5; animation: pop 0.25s ease-out; }
+.board-msg span { background: var(--msg-bg); box-shadow: inset 0 0 0 1.5px var(--gold); border-radius: 14px; padding: 8px 14px; font-size: 15px; font-weight: 700; line-height: 1.5; animation: pop 0.25s ease-out; }
 .board-msg span em { display: block; font-style: normal; font-family: var(--display); font-weight: 400; font-size: 30px; color: var(--gold); line-height: 1.2; }
 @keyframes pop { from { transform: scale(0.85); opacity: 0; } }
 
@@ -171,7 +253,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
 .hand .card.nope { animation: nope 0.3s; }
 .hand .card { touch-action: none; }
 .hand .card.dragging { transition: none; z-index: 30; box-shadow: 0 0 0 3px var(--turq), 0 14px 26px rgba(0, 0, 0, 0.5); filter: none !important; }
-.board.drop-ready { box-shadow: inset 0 0 0 2px var(--turq), 0 0 0 4px rgba(46, 196, 182, 0.3); }
+.board.drop-ready { box-shadow: inset 0 0 0 2px var(--turq), 0 0 0 4px rgba(var(--turq-rgb), 0.3); }
 .no-guide .hand.active .card:not(.legal) { filter: none; }
 .no-guide .hand .card.legal { top: 16px; }
 .no-guide .s0.empty-turn { box-shadow: none; }
@@ -211,7 +293,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
 .nt-grid button { height: 70px; border: 0; border-radius: 14px; background: transparent; box-shadow: inset 0 0 0 1.5px var(--gold); color: var(--gold); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
 .nt-grid button[aria-pressed="true"] { background: var(--lapis-3); box-shadow: inset 0 0 0 1.5px var(--gold), 0 0 0 3px var(--turq); }
 .nt-grid b { font-size: 17px; font-weight: 800; }
-.nt-grid small { font-size: 12px; color: #C9D1E3; direction: ltr; }
+.nt-grid small { font-size: 12px; color: var(--soft); direction: ltr; }
 .hint { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.7; }
 
 .result { align-items: center; text-align: center; }
@@ -232,7 +314,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
 .pips .row { display: flex; align-items: center; gap: 10px; font-size: 13px; }
 .pips .row > span:first-child { width: 40px; }
 .pips .dots { display: flex; flex-wrap: wrap; gap: 5px; flex: 1; }
-.pips .dots i { width: 16px; height: 16px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px #4A5B83; }
+.pips .dots i { width: 16px; height: 16px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--pip); }
 .pips .us i.on { background: var(--turq); box-shadow: none; }
 .pips .them i.on { background: var(--gold); box-shadow: none; }
 .pips .row b { font-size: 15px; }
@@ -281,7 +363,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
 .fx.on { opacity: 1; }
 .fx.live { transition: opacity 0.2s; }               /* follows the finger directly */
 .fx-boresh { --fxc: #FF5A3C; --fxs: rgba(255, 90, 60, 0.55); }
-.fx-lazem { --fxc: #E0B45C; --fxs: rgba(224, 180, 92, 0.55); }
+.fx-lazem { --fxc: var(--gold); --fxs: rgba(var(--gold-rgb), 0.55); }
 .fx .glow { position: absolute; inset: 0; border-radius: 30px; opacity: var(--charge);
   box-shadow: 0 0 calc(var(--charge) * 44px) calc(var(--charge) * 10px) var(--fxs), inset 0 0 calc(var(--charge) * 70px) var(--fxs), inset 0 0 0 calc(2px + var(--charge) * 2px) var(--fxc); }
 .fx .veil { position: absolute; inset: 8px; border-radius: 22px; background: radial-gradient(circle at 50% 50%, transparent 30%, rgba(6, 12, 26, 0.75)); opacity: calc(var(--charge) * 0.9); }
@@ -338,7 +420,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
     <symbol id="i-back" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
     <symbol id="i-book" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></g></symbol>
-    <symbol id="i-star" viewBox="0 0 56 56"><path d="M16 16H40V40H16Z M28 11L45 28L28 45L11 28Z" fill="#1E3260" stroke="#E0B45C" stroke-width="1.2" stroke-linejoin="round"/></symbol>
+    <symbol id="i-star" viewBox="0 0 56 56"><path d="M16 16H40V40H16Z M28 11L45 28L28 45L11 28Z" style="fill:var(--lapis-3);stroke:var(--gold)" stroke-width="1.2" stroke-linejoin="round"/></symbol>
   </svg>
 
   <!-- HOME -->
@@ -349,7 +431,9 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
     </div>
     <div class="fan" aria-hidden="true" id="fan"></div>
     <div class="actions">
+      <p class="note" id="homeNote" hidden></p>
       <button class="btn primary" id="btnNew" type="button">بازی جدید</button>
+      <button class="btn soft" id="btnNet" type="button">بازی شبکه‌ای (۲ تا ۴ نفره)</button>
       <button class="btn ghost" id="btnContinue" type="button" hidden>ادامهٔ بازی قبلی</button>
       <div class="row">
         <button class="btn soft" type="button" data-go="settings"><svg aria-hidden="true"><use href="#i-gear"/></svg>تنظیمات</button>
@@ -429,7 +513,8 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
         <button class="btn primary" type="button" data-menu="resume">ادامهٔ بازی</button>
         <button class="btn soft" type="button" data-menu="settings"><svg aria-hidden="true"><use href="#i-gear"/></svg>تنظیمات</button>
         <button class="btn soft" type="button" data-menu="rules"><svg aria-hidden="true"><use href="#i-book"/></svg>قوانین</button>
-        <button class="btn ghost" type="button" data-menu="new">شروع بازی جدید</button>
+        <button class="btn soft" type="button" data-menu="toai" id="menuToAi" hidden>جایگزینی بازیکن قطع‌شده با کامپیوتر</button>
+        <button class="btn ghost" type="button" data-menu="new" id="menuNew">شروع بازی جدید</button>
         <button class="btn soft" type="button" data-menu="home">خروج به صفحهٔ اصلی</button>
       </div>
     </div>
@@ -443,11 +528,61 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
     </div>
   </section>
 
+
+  <!-- NETWORK -->
+  <section class="screen page" id="net" hidden>
+    <div class="page-head">
+      <button class="icon-btn" type="button" data-back aria-label="بازگشت"><svg aria-hidden="true"><use href="#i-back"/></svg></button>
+      <h1>بازی شبکه‌ای</h1>
+    </div>
+    <div class="group">
+      <h2>نام شما</h2>
+      <input class="inp" id="netName" maxlength="12" placeholder="مثلاً علی" autocomplete="off">
+      <p class="note">همهٔ بازیکن‌ها باید به یک Wi‑Fi وصل باشند (یا به هات‌اسپات گوشی میزبان). هر جایی که انسان ندارد، کامپیوتر بازی می‌کند.</p>
+    </div>
+    <p class="err" id="netErr" hidden></p>
+    <div class="group" id="netChoose">
+      <button class="btn primary" id="btnHostMode" type="button">ساخت اتاق (من میزبان‌ام)</button>
+      <button class="btn soft" id="btnJoinMode" type="button">پیوستن به اتاق دوستم</button>
+    </div>
+    <div class="group" id="netHostCfg" hidden>
+      <h2>هر جا را چه کسی بازی کند؟</h2>
+      <div id="netSeats">
+        <div class="opt"><div class="txt"><b>حریف سمت راست</b></div><div class="seg two" data-seat="1"><button type="button" data-val="ai">کامپیوتر</button><button type="button" data-val="human">انسان</button></div></div>
+        <div class="opt"><div class="txt"><b>یار (روبه‌رو)</b></div><div class="seg two" data-seat="2"><button type="button" data-val="ai">کامپیوتر</button><button type="button" data-val="human">انسان</button></div></div>
+        <div class="opt"><div class="txt"><b>حریف سمت چپ</b></div><div class="seg two" data-seat="3"><button type="button" data-val="ai">کامپیوتر</button><button type="button" data-val="human">انسان</button></div></div>
+      </div>
+      <button class="btn primary" id="btnCreate" type="button">ساخت اتاق</button>
+    </div>
+    <div class="group" id="netRoom" hidden>
+      <h2>اتاق آماده است</h2>
+      <p class="note">روی گوشی دوستان «پیوستن به اتاق» را بزنید و این آدرس و کد را وارد کنید:</p>
+      <div class="roombox"><div><small>آدرس</small><div id="roomAddr"></div></div><div><small>کد</small><b id="roomCode" dir="ltr"></b></div></div>
+      <div class="plrs" id="roomPlayers"></div>
+      <button class="btn primary" id="btnStartNet" type="button" disabled>شروع بازی</button>
+    </div>
+    <div class="group" id="netJoinCfg" hidden>
+      <h2>آدرس میزبان</h2>
+      <input class="inp ltr" id="joinIp" inputmode="decimal" placeholder="192.168.1.5" autocomplete="off">
+      <h2>کد اتاق</h2>
+      <input class="inp ltr" id="joinCode" inputmode="numeric" maxlength="4" placeholder="۴ رقم" autocomplete="off">
+      <button class="btn primary" id="btnJoin" type="button">پیوستن</button>
+    </div>
+    <div class="group" id="netWait" hidden>
+      <h2 id="waitText">در حال اتصال…</h2>
+      <div class="plrs" id="waitPlayers"></div>
+    </div>
+  </section>
+
   <!-- SETTINGS -->
   <section class="screen page" id="settings" hidden>
     <div class="page-head">
       <button class="icon-btn" type="button" data-back aria-label="بازگشت"><svg aria-hidden="true"><use href="#i-back"/></svg></button>
       <h1>تنظیمات</h1>
+    </div>
+    <div class="group">
+      <h2>تم</h2>
+      <div class="themes" id="themeGrid" role="group" aria-label="تم"></div>
     </div>
     <div class="group">
       <h2 id="sLvl">سطح هوش مصنوعی</h2>
@@ -563,11 +698,36 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
     set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } },
     del: function (k) { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } }
   };
-  var settings = Object.assign({ difficulty: 'hard', saras: true, naras: true, taknaras: true, kotNT: false, target: 7, speed: 'normal', tap: 'single', sound: true, guide: true, fx: true }, store.get(SKEY) || {});
+  var settings = Object.assign({ difficulty: 'hard', saras: true, naras: true, taknaras: true, kotNT: false, target: 7, speed: 'normal', tap: 'single', sound: true, guide: true, fx: true, theme: 'lapis', pname: '', lastIp: '', net1: 'ai', net2: 'human', net3: 'ai' }, store.get(SKEY) || {});
   function gameSettings() {
     return { difficulty: settings.difficulty, saras: settings.saras, naras: settings.naras, taknaras: settings.taknaras, kotNT: settings.kotNT, target: settings.target };
   }
   function speed() { return SPEEDS[settings.speed] || SPEEDS.normal; }
+
+
+  /* ---------- themes ---------- */
+  var THEMES = [
+    ['lapis', 'لاجورد', '#0E1A33'], ['golestan', 'گلستان', '#0A2A22'], ['yalda', 'یلدا', '#2A0F1B'],
+    ['kavir', 'کویر', '#2B1B10'], ['shab', 'نیمه‌شب', '#06070B'], ['kaghaz', 'کاغذی', '#EFE6D2']
+  ];
+  function themeBg(id) { for (var i = 0; i < THEMES.length; i++) if (THEMES[i][0] === id) return THEMES[i][2]; return THEMES[0][2]; }
+  function applyTheme() {
+    if (!themeBg(settings.theme) || !THEMES.some(function (t) { return t[0] === settings.theme; })) settings.theme = 'lapis';
+    var de = document.documentElement;
+    if (settings.theme === 'lapis') de.removeAttribute('data-theme'); else de.setAttribute('data-theme', settings.theme);
+    var bg = themeBg(settings.theme);
+    var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', bg);
+    try { if (window.HokmNative && window.HokmNative.setBg) window.HokmNative.setBg(bg, settings.theme === 'kaghaz'); } catch (e) { /* no native bridge */ }
+  }
+  $('themeGrid').innerHTML = THEMES.map(function (t) {
+    return '<button type="button" class="theme-btn" data-theme="' + t[0] + '" data-val="' + t[0] + '" aria-pressed="false">' +
+      '<span class="sw"><i></i><i></i><i></i><u></u><u></u></span><b>' + t[1] + '</b></button>';
+  }).join('');
+  $('themeGrid').addEventListener('click', function (e) {
+    var b = e.target.closest('.theme-btn'); if (!b) return;
+    settings.theme = b.getAttribute('data-val'); applyTheme(); saveSettings();
+  });
+  applyTheme();
 
   /* ---------- sound ---------- */
   var actx = null;
@@ -616,9 +776,10 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
   /* ---------- screens ---------- */
   var current = 'home', returnTo = 'home';
   function show(id) {
-    ['home', 'game', 'settings', 'rules'].forEach(function (s) { $(s).hidden = s !== id; });
+    ['home', 'game', 'settings', 'rules', 'net'].forEach(function (s) { $(s).hidden = s !== id; });
     current = id;
     if (id === 'home') refreshHome();
+    if (id === 'net') renderNet();
     if (id === 'game') requestAnimationFrame(layoutHand);
   }
   function refreshHome() {
@@ -637,6 +798,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
     document.querySelectorAll('.switch[data-set]').forEach(function (sw) {
       sw.setAttribute('aria-checked', String(!!settings[sw.getAttribute('data-set')]));
     });
+    document.querySelectorAll('#themeGrid .theme-btn').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-val') === settings.theme)); });
     $('tgtVal').textContent = fa(settings.target);
     document.getElementById('app').classList.toggle('no-guide', !settings.guide);
   }
@@ -670,6 +832,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
   });
 
   function goBack() {
+    if (current === 'net' && net && !net.started) netClose(true);
     show(returnTo);
     if (returnTo === 'game' && $('menuOverlay').hidden && $('lastOverlay').hidden) setPaused(false);
   }
@@ -688,11 +851,12 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
   }
   function frame() { return new Promise(function (r) { requestAnimationFrame(function () { setTimeout(r, 16); }); }); }
   function setPaused(p) {
+    if (net && p) return;     // a shared game can't be paused
     paused = p;
     if (!p) { var w = pauseWaiters; pauseWaiters = []; w.forEach(function (f) { f(); }); }
   }
   function save() {
-    if (!game) return;
+    if (!game || net) return;
     if (game.phase === 'matchOver') store.del(GKEY); else store.set(GKEY, game.toJSON());
   }
 
@@ -719,6 +883,8 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
       el.classList.toggle('hakem', !!game && game.hakem === p);
       el.classList.toggle('turn', turn === p);
       el.querySelector('.cnt').textContent = fa(handCount(p)) + ' برگ';
+      el.querySelector('.nm').textContent = NAMES[p];
+      el.querySelector('.av').firstChild.nodeValue = NAMES[p].charAt(0);
     }
     var me = seatEls[0], isH = !!game && game.hakem === 0;
     me.querySelector('.crown-me').hidden = !isH;
@@ -1040,15 +1206,11 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
     var r = hokmResolve; hokmResolve = null; r(hokmPick);
   });
 
-  /* ---------- round steps ---------- */
-  async function beginRound(id) {
-    var ev = game.startRound();
-    save();
+  /* ---------- round steps (shared by the host and by remote players' screens) ---------- */
+  async function presentRound(seq, id) {
     clearBoard(); boardMsg(''); renderScore(); renderChip();
     handEl.innerHTML = ''; renderSeats(-1);
-    if (ev.hakemDraw) {
-      boardMsg('');
-      var seq = ev.hakemDraw;
+    if (seq) {
       var step = Math.max(80, Math.min(speed().step, 3200 / seq.length));
       for (var i = 0; i < seq.length; i++) {
         putOnBoard(seq[i].seat, seq[i].card, true);
@@ -1063,34 +1225,30 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
       clearBoard(); boardMsg('');
     }
   }
-  async function hokmStep(id) {
+  async function beginRound(id) {
+    var ev = game.startRound();
+    save();
+    bcast({ e: 'round', draw: ev.hakemDraw });
+    await presentRound(ev.hakemDraw, id);
+  }
+  function presentHokmWait(id) {
     clearBoard(); renderChip(); renderSeats(-1);
     renderHand([]);
-    var h;
-    if (game.hakem === 0) {
-      h = await humanHokm(id);
-    } else {
+    if (game.hakem !== 0) {
       seatEls[game.hakem].classList.add('turn');
       boardMsg(NAMES[game.hakem] + ' حکم را انتخاب می‌کند…');
-      await sleep(Math.max(500, speed().ai), id);
-      await frame(); alive(id);
-      h = game.aiHokm();
-      seatEls[game.hakem].classList.remove('turn');
     }
-    if (h.mode === 'middle') {
-      var mid = game.middleCard(), mate = H.partnerOf(game.hakem);
-      clearBoard();
-      putOnBoard(mate, mid, true);
-      var mEl = $('slot' + mate).querySelector('.card'); if (mEl) mEl.classList.add('win');
-      boardMsg('برگ وسطِ ' + (mate === 0 ? 'شما' : NAMES[mate]) + '<em>' + SYM[H.suitOf(mid)] + ' ' + H.SUIT_FA[H.suitOf(mid)] + '</em>');
-      sfx.tick();
-      await sleep(1700, id);
-      clearBoard(); boardMsg('');
-      h = { mode: 'suit', trump: H.suitOf(mid) };
-    }
-    var before = myCards();
-    game.setHokm(h);
-    save();
+  }
+  async function presentMiddle(mate, mid, id) {
+    clearBoard();
+    putOnBoard(mate, mid, true);
+    var mEl = $('slot' + mate).querySelector('.card'); if (mEl) mEl.classList.add('win');
+    boardMsg('برگ وسطِ ' + (mate === 0 ? 'شما' : NAMES[mate]) + '<em>' + SYM[H.suitOf(mid)] + ' ' + H.SUIT_FA[H.suitOf(mid)] + '</em>');
+    sfx.tick();
+    await sleep(1700, id);
+    clearBoard(); boardMsg('');
+  }
+  async function presentHokm(h, before, id) {
     renderChip(); renderScore();
     var label = h.mode === 'suit' ? SYM[h.trump] + ' ' + H.SUIT_FA[h.trump] : NT_INFO[h.mode][0];
     boardMsg((game.hakem === 0 ? 'شما' : NAMES[game.hakem]) + ' حکم کرد<em>' + label + '</em>');
@@ -1099,23 +1257,35 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
     await sleep(1400, id);
     boardMsg('');
   }
-  async function playStep(id) {
-    var p = game.turn();
-    renderSeats(p);
-    var card;
-    if (p === 0) {
-      card = await humanPick(id);
-    } else {
-      var sp = speed();
-      await sleep(Math.round(sp.ai * 0.35), id);
-      await frame(); alive(id);
-      var t0 = Date.now();
-      card = game.aiCard(p);
-      await sleep(Math.max(0, Math.round(sp.ai * 0.65) - (Date.now() - t0)), id);
+  async function hokmStep(id) {
+    presentHokmWait(id);
+    bcast({ e: 'hokmWait' });
+    var h = null, hk = game.hakem;
+    if (hk === 0) {
+      h = await humanHokm(id);
+    } else if (isRemote(hk)) {
+      bcast({ e: 'askHokm' }, hk);
+      h = await remoteWait(hk, 'hokm');
     }
-    var kind = fxKind(p, card);
-    var res = game.play(p, card);
+    if (!h) {
+      await sleep(Math.max(500, speed().ai), id);
+      await frame(); alive(id);
+      h = game.aiHokm();
+    }
+    seatEls[hk].classList.remove('turn');
+    if (h.mode === 'middle') {
+      var mid = game.middleCard(), mate = H.partnerOf(hk);
+      bcast({ e: 'middle', mate: mate, card: mid });
+      await presentMiddle(mate, mid, id);
+      h = { mode: 'suit', trump: H.suitOf(mid) };
+    }
+    var before = myCards();
+    game.setHokm(h);
     save();
+    bcast({ e: 'hokm', h: h });
+    await presentHokm(h, before, id);
+  }
+  async function presentPlay(p, card, kind, res, id) {
     sfx.card();
     putOnBoard(p, card, true);
     renderSeats(-1);
@@ -1136,6 +1306,30 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
     }
     if (res.roundOver) await showResult(res, id);
   }
+  async function playStep(id) {
+    var p = game.turn();
+    renderSeats(p);
+    bcast({ e: 'turn', seat: p });
+    var card = null;
+    if (p === 0) {
+      card = await humanPick(id);
+    } else {
+      if (isRemote(p)) card = await remoteWait(p, 'card');
+      if (card === null) {
+        var sp = speed();
+        await sleep(Math.round(sp.ai * 0.35), id);
+        await frame(); alive(id);
+        var t0 = Date.now();
+        card = game.aiCard(p);
+        await sleep(Math.max(0, Math.round(sp.ai * 0.65) - (Date.now() - t0)), id);
+      }
+    }
+    var kind = fxKind(p, card);
+    var res = game.play(p, card);
+    save();
+    bcast({ e: 'play', p: p, card: card, fx: kind, res: { winner: res.winner, trickDone: res.trickDone, roundOver: res.roundOver, matchOver: res.matchOver } });
+    await presentPlay(p, card, kind, res, id);
+  }
 
   function pipsRow(team, cls, label) {
     var n = Math.max(game.settings.target, game.scores[team]);
@@ -1143,12 +1337,16 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
     for (var i = 0; i < n; i++) dots += '<i class="' + (i < game.scores[team] ? 'on' : '') + '"></i>';
     return '<div class="row ' + cls + '"><span>' + label + '</span><span class="dots">' + dots + '</span><b>' + fa(game.scores[team]) + '</b></div>';
   }
+  function teamNames(t) {
+    // names of the two seats of team t (display frame: 0 = our team)
+    return t === 0 ? 'شما و ' + NAMES[2] : NAMES[1] + ' و ' + NAMES[3];
+  }
   function showResult(res, id) {
     var r = res.roundOver, won = r.winTeam === 0;
     var title, line;
     if (res.matchOver) {
       title = won ? 'قهرمان' : 'باخت';
-      line = won ? 'شما و ' + NAMES[2] + ' بازی را بردید' : NAMES[1] + ' و ' + NAMES[3] + ' بازی را بردند';
+      line = won ? teamNames(0) + ' بازی را بردید' : teamNames(1) + ' بازی را بردند';
     } else if (r.hakemKot) {
       title = 'حاکم‌کوت';
       line = won ? 'تیم حاکم حتی یک دست هم نگرفت' : 'تیم شما حاکم بود و دستی نگرفت';
@@ -1159,6 +1357,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
       title = won ? 'بُرد' : 'باخت';
       line = (won ? 'این دور را بردید؛ ' : 'این دور را باختید؛ ') + 'حکم: ' + (r.hokm.mode === 'suit' ? H.SUIT_FA[r.hokm.trump] : NT_INFO[r.hokm.mode][0]);
     }
+    var guest = net && net.role === 'client';
     $('resultSheet').classList.toggle('lost', !won);
     $('resTitle').textContent = title;
     $('resLine').textContent = line;
@@ -1168,18 +1367,23 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
     $('resPips').innerHTML = '<span class="label">امتیاز بازی تا ' + fa(game.settings.target) + '</span>' +
       pipsRow(0, 'us', 'ما') + pipsRow(1, 'them', 'حریف') +
       (res.matchOver ? '' : '<span class="label">حاکم دست بعد: ' + (r.nextHakem === 0 ? 'شما' : NAMES[r.nextHakem]) + '</span>');
-    $('resNext').textContent = res.matchOver ? 'بازی دوباره' : 'دست بعد';
+    $('resNext').textContent = guest ? 'منتظر میزبان…' : (res.matchOver ? 'بازی دوباره' : 'دست بعد');
+    $('resNext').disabled = guest;
     $('resultOverlay').hidden = false;
     if (won) sfx.win(); else sfx.lose();
+    if (guest && net.pendingNext) { net.pendingNext = false; resultResolve = null; $('resultOverlay').hidden = true; return Promise.resolve(); }
     return new Promise(function (resolve) { resultResolve = resolve; }).then(function (act) {
       alive(id);
       $('resultOverlay').hidden = true;
-      if (act === 'home') { stopGame(); show('home'); throw CANCEL; }
+      $('resNext').disabled = false;
+      if (act === 'home') { leaveGame(); throw CANCEL; }
+      if (guest) return;
       if (res.matchOver) { newMatch(); throw CANCEL; }
+      bcast({ e: 'next' });
     });
   }
   var resultResolve = null;
-  $('resNext').addEventListener('click', function () { if (resultResolve) { var r = resultResolve; resultResolve = null; r('next'); } });
+  $('resNext').addEventListener('click', function () { if (resultResolve && !(net && net.role === 'client')) { var r = resultResolve; resultResolve = null; r('next'); } });
   $('resHome').addEventListener('click', function () { if (resultResolve) { var r = resultResolve; resultResolve = null; r('home'); } });
 
   async function run(id) {
@@ -1198,11 +1402,13 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
   function stopGame() {
     runId++;
     pendingPick = null; hokmResolve = null; resultResolve = null; selected = -1;
+    if (net) { net.evq = []; net.draining = false; net.pendingNext = false; }
     fxReset();
     setPaused(false);
     ['hokmOverlay', 'resultOverlay', 'menuOverlay', 'lastOverlay'].forEach(function (o) { $(o).hidden = true; });
     $('turnPill').hidden = true;
   }
+  function leaveGame() { netClose(true); stopGame(); show('home'); }
   function enterGame() {
     stopGame();
     show('game');
@@ -1215,6 +1421,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
   function newMatch() {
     store.del(GKEY);
     game = new H.HokmGame(gameSettings());
+    if (net) bcast({ e: 'reset' });
     enterGame();
   }
   function continueMatch() {
@@ -1224,11 +1431,344 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
     game.settings.difficulty = settings.difficulty;
     enterGame();
   }
+
+  /* ---------- LAN play ----------
+     The host's phone runs the real game (and a small mailbox relay); every other player's screen only shows what the host sends:
+     a view of the game turned so that player sits at the bottom, plus an event saying what to animate. */
+  var net = null;
+  var AI_NAMES = ['', 'نیلوفر', 'بهرام', 'کاوه'];
+  var NET_PORT = 8765;
+  function netPost(to, obj) {
+    var base = net.base, body = JSON.stringify(obj);
+    net.chain = net.chain || {};
+    net.chain[to] = (net.chain[to] || Promise.resolve()).then(function () {
+      var tries = 0;
+      function go() {
+        return fetch(base + '/send?to=' + encodeURIComponent(to), { method: 'POST', body: body }).then(function (r) {
+          if (!r.ok) throw new Error('send ' + r.status);
+        }).catch(function (e) {
+          if (++tries >= 4 || !net || net.base !== base) return;
+          return new Promise(function (res) { setTimeout(res, 250 * tries); }).then(go);
+        });
+      }
+      return go();
+    });
+  }
+  function netPoll(mine, onMsg, onLost) {
+    var n = net, after = 0, fails = 0;
+    (async function loop() {
+      while (net === n && !n.closed) {
+        try {
+          var r = await fetch(n.base + '/recv?id=' + encodeURIComponent(mine) + '&after=' + after);
+          var j = await r.json();
+          fails = 0; after = j.next;
+          j.msgs.forEach(function (m) { try { onMsg(JSON.parse(m)); } catch (e) { console.error(e); } });
+        } catch (e) {
+          fails++;
+          if (fails === 6 && onLost) onLost();
+          await new Promise(function (res) { setTimeout(res, Math.min(2000, 250 * fails)); });
+        }
+      }
+    })();
+  }
+  function netClose(notify) {
+    if (!net) return;
+    var n = net;
+    if (notify) {
+      try {
+        if (n.role === 'host') Object.keys(n.clients).forEach(function (k) { netPost(n.clients[k].id, { t: 'end', why: 'میزبان بازی را بست' }); });
+        else if (n.base) netPost('host', { t: 'bye', id: n.id });
+      } catch (e) { /* ignore */ }
+    }
+    // let the farewell messages go out before the relay stops
+    setTimeout(function () {
+      n.closed = true;
+      if (n.timer) clearInterval(n.timer);
+      if (n.role === 'host' && window.HokmNative && window.HokmNative.stopRelay) { try { window.HokmNative.stopRelay(); } catch (e) { /* ignore */ } }
+    }, notify ? 600 : 0);
+    net = null;
+    NAMES = ['شما', 'نیلوفر', 'بهرام', 'کاوه'];
+  }
+  function isRemote(p) { return !!(net && net.role === 'host' && net.started && net.clients[p] && !net.ai[p]); }
+  function remoteWait(seat, kind) {
+    return new Promise(function (resolve) { net.wait = { seat: seat, kind: kind, resolve: resolve }; });
+  }
+  function bcast(ev, only) {
+    if (!net || net.role !== 'host' || !net.started) return;
+    Object.keys(net.clients).forEach(function (k) {
+      k = +k;
+      if (only !== undefined && only !== k) return;
+      if (net.ai[k]) return;
+      var m = Object.assign({ t: 'ev' }, ev);
+      if (game) m.snap = H.viewFor(game, k);
+      netPost(net.clients[k].id, m);
+    });
+  }
+  function lostSeats() {
+    var out = [];
+    if (!net || net.role !== 'host') return out;
+    Object.keys(net.clients).forEach(function (k) {
+      if (!net.ai[k] && Date.now() - net.clients[k].last > 12000) out.push(+k);
+    });
+    return out;
+  }
+  function seatToAI(seat) {
+    net.ai[seat] = true;
+    if (net.wait && net.wait.seat === seat) { var w = net.wait; net.wait = null; w.resolve(null); }
+  }
+  function lobbyInfo() {
+    return { names: net.names, humans: net.humans, joined: Object.keys(net.clients).map(Number) };
+  }
+  function hostMsg(m) {
+    if (!net || net.role !== 'host') return;
+    if (m.t === 'join') {
+      if (m.code !== net.code) { netPost(m.id, { t: 'reject', why: 'کد اتاق درست نیست' }); return; }
+      var known = Object.keys(net.clients).filter(function (k) { return net.clients[k].id === m.id; })[0];
+      if (known !== undefined) { net.clients[known].last = Date.now(); netPost(m.id, Object.assign({ t: 'lobby', seat: +known }, lobbyInfo())); return; }
+      if (net.started) { netPost(m.id, { t: 'reject', why: 'بازی شروع شده است' }); return; }
+      var seat = -1;
+      for (var s = 1; s < 4; s++) if (net.humans[s] && !net.clients[s]) { seat = s; break; }
+      if (seat < 0) { netPost(m.id, { t: 'reject', why: 'اتاق پر است' }); return; }
+      net.clients[seat] = { id: m.id, name: (m.name || 'بازیکن').slice(0, 12), last: Date.now() };
+      net.names[seat] = net.clients[seat].name;
+      netLobbyChanged();
+      return;
+    }
+    var seatOf = -1;
+    Object.keys(net.clients).forEach(function (k) { if (net.clients[k].id === m.id) seatOf = +k; });
+    if (seatOf < 0) return;
+    net.clients[seatOf].last = Date.now();
+    if (m.t === 'bye') {
+      if (net.started) {
+        seatToAI(seatOf);
+        if (current === 'game') boardMsg(NAMES[seatOf] + ' بازی را ترک کرد؛ کامپیوتر جایش بازی می‌کند');
+      } else { delete net.clients[seatOf]; net.names[seatOf] = AI_NAMES[seatOf]; netLobbyChanged(); }
+    } else if (m.t === 'card' && net.wait && net.wait.seat === seatOf && net.wait.kind === 'card') {
+      if (game.st && game.st.turn === seatOf && game.legal(seatOf).indexOf(m.c) >= 0) { var w = net.wait; net.wait = null; w.resolve(m.c); }
+    } else if (m.t === 'hokm' && net.wait && net.wait.seat === seatOf && net.wait.kind === 'hokm') {
+      var h = m.h;
+      if (h && (h.mode === 'middle' || game.options().some(function (o) { return H.sameHokm(o, h); }))) { var w2 = net.wait; net.wait = null; w2.resolve(h); }
+    }
+  }
+  function netLobbyChanged() {
+    renderLobby();
+    Object.keys(net.clients).forEach(function (k) { netPost(net.clients[k].id, Object.assign({ t: 'lobby', seat: +k }, lobbyInfo())); });
+  }
+  function setNames(real, mine) {
+    NAMES = [0, 1, 2, 3].map(function (d) { return d === 0 ? 'شما' : real[(d + mine) & 3]; });
+  }
+  function clientMsg(m) {
+    if (!net || net.role !== 'client') return;
+    if (m.t === 'lobby') {
+      net.seat = m.seat; net.names = m.names; net.humans = m.humans; net.joined = m.joined;
+      net.last = Date.now();
+      renderLobby();
+    } else if (m.t === 'reject') {
+      var why = m.why; netClose(false); netError(why); renderNet();
+    } else if (m.t === 'start') {
+      net.started = true; net.evq = []; net.names = m.names;
+      setNames(net.names, net.seat);
+      stopGame(); game = null;
+      show('game'); clearBoard(); boardMsg('بازی شروع می‌شود…'); renderScore(); renderChip(); renderSeats(-1); handEl.innerHTML = '';
+    } else if (m.t === 'end') {
+      var why2 = m.why; netClose(false); stopGame(); show('home'); alertMsg(why2 || 'بازی تمام شد');
+    } else if (m.t === 'ev') {
+      if (m.e === 'next' || m.e === 'reset') {
+        if (resultResolve) { var r = resultResolve; resultResolve = null; r('next'); } else net.pendingNext = true;
+      }
+      net.evq.push(m);
+      drain();
+    }
+  }
+  async function drain() {
+    var n = net;
+    if (!n || n.draining) return;
+    n.draining = true;
+    while (net === n && n.evq.length) {
+      var ev = n.evq.shift();
+      try { await clientEv(ev, runId); } catch (e) { if (e !== CANCEL) console.error(e); }
+    }
+    n.draining = false;
+  }
+  async function clientEv(ev, id) {
+    var m = net.seat, R = function (s) { return H.rotSeat(s, m); };
+    var before = ev.e === 'hokm' ? myCards() : null;
+    if (ev.snap) game = H.HokmGame.fromJSON(ev.snap);
+    if (ev.e === 'round') {
+      net.pendingNext = false;
+      await presentRound(ev.draw ? ev.draw.map(function (x) { return { seat: R(x.seat), card: x.card }; }) : null, id);
+    } else if (ev.e === 'hokmWait') {
+      presentHokmWait(id);
+    } else if (ev.e === 'askHokm') {
+      var h = await humanHokm(id);
+      netPost('host', { t: 'hokm', id: net.id, h: h });
+    } else if (ev.e === 'middle') {
+      await presentMiddle(R(ev.mate), ev.card, id);
+    } else if (ev.e === 'hokm') {
+      seatEls.forEach(function (el) { el.classList.remove('turn'); });
+      await presentHokm(ev.h, before, id);
+    } else if (ev.e === 'turn') {
+      var p = R(ev.seat);
+      renderSeats(p);
+      if (p === 0) {
+        var c = await humanPick(id);
+        var b = handEl.querySelector('.card[data-c="' + c + '"]'); if (b) b.style.visibility = 'hidden';
+        netPost('host', { t: 'card', id: net.id, c: c });
+      }
+    } else if (ev.e === 'play') {
+      var r = ev.res;
+      var res = { winner: R(r.winner), trickDone: r.trickDone, roundOver: H.rotRound(r.roundOver, m), matchOver: r.matchOver };
+      await presentPlay(R(ev.p), ev.card, ev.fx, res, id);
+    } else if (ev.e === 'reset') {
+      stopGame_keepNet(); game = null;
+      clearBoard(); boardMsg('دور تازه…'); renderScore(); renderChip(); renderSeats(-1); handEl.innerHTML = '';
+    }
+  }
+  function stopGame_keepNet() {
+    var q = net.evq, d = net.draining;
+    stopGame();
+    net.evq = q; net.draining = d;
+  }
+  function alertMsg(t) { var el = $('homeNote'); el.textContent = t; el.hidden = !t; }
+
+  /* ---------- LAN lobby screens ---------- */
+  var netErrText = '';
+  function netError(t) { netErrText = t || ''; $('netErr').textContent = netErrText; $('netErr').hidden = !t; }
+  function randId() { return Math.random().toString(36).slice(2, 10); }
+  function myName() { return ($('netName').value || '').trim().slice(0, 12) || 'بازیکن'; }
+  function renderNet() {
+    var inRoom = !!net;
+    $('netChoose').hidden = inRoom;
+    $('netHostCfg').hidden = !(netMode === 'host' && !inRoom);
+    $('netJoinCfg').hidden = !(netMode === 'join' && !inRoom);
+    $('netRoom').hidden = !(inRoom && net.role === 'host');
+    $('netWait').hidden = !(inRoom && net.role === 'client');
+    $('netName').disabled = inRoom;
+    if (inRoom) renderLobby();
+  }
+  var netMode = '';
+  function renderLobby() {
+    if (!net) return;
+    if (net.role === 'host') {
+      var ips = net.ips.length ? net.ips : ['—'];
+      $('roomAddr').innerHTML = ips.map(function (ip) { return '<b dir="ltr">' + ip + (net.port !== NET_PORT ? ':' + net.port : '') + '</b>'; }).join(' ');
+      $('roomCode').textContent = net.code;
+      var rows = '', ready = true;
+      for (var s = 1; s < 4; s++) {
+        var role = s === 2 ? 'یار' : 'حریف';
+        if (net.humans[s]) {
+          var c = net.clients[s];
+          if (!c) ready = false;
+          rows += '<div class="plr ' + (c ? 'on' : '') + '"><span>' + role + '</span><b>' + (c ? c.name : 'در انتظار بازیکن…') + '</b></div>';
+        } else rows += '<div class="plr"><span>' + role + '</span><b>' + AI_NAMES[s] + ' (کامپیوتر)</b></div>';
+      }
+      $('roomPlayers').innerHTML = '<div class="plr on"><span>شما</span><b>' + net.names[0] + '</b></div>' + rows;
+      $('btnStartNet').disabled = !ready;
+      $('btnStartNet').textContent = ready ? 'شروع بازی' : 'منتظر بازیکن‌ها…';
+    } else {
+      var t = net.seat === undefined ? 'در حال اتصال…' : 'وصل شدید؛ منتظر شروع بازی توسط میزبان…';
+      $('waitText').textContent = t;
+      var list = '';
+      if (net.names && net.joined) {
+        for (var q = 0; q < 4; q++) {
+          var human = q === 0 || (net.humans && net.humans[q] && net.joined.indexOf(q) >= 0);
+          list += '<div class="plr ' + (human ? 'on' : '') + '"><span>' + (q === net.seat ? 'شما' : (q === 0 ? 'میزبان' : 'جای ' + fa(q))) + '</span><b>' + (human || q === net.seat ? net.names[q] : (net.humans[q] ? 'در انتظار…' : net.names[q] + ' (کامپیوتر)')) + '</b></div>';
+        }
+      }
+      $('waitPlayers').innerHTML = list;
+    }
+  }
+  async function createRoom() {
+    netError('');
+    var base = window.__relayBase || '', port = NET_PORT;
+    if (!base) {
+      if (!(window.HokmNative && window.HokmNative.startRelay)) { netError('ساخت اتاق فقط در اپ اندروید ممکن است. برای بازی با همین نسخه، به اتاق یک گوشی دیگر بپیوندید.'); return; }
+      try { window.HokmNative.stopRelay(); } catch (e) { /* ignore */ }
+      port = window.HokmNative.startRelay();
+      if (port < 0) { netError('راه‌اندازی اتاق شکست خورد'); return; }
+      base = 'http://127.0.0.1:' + port;
+    }
+    var ips = [];
+    try { ips = JSON.parse(window.HokmNative.ips()); } catch (e) { ips = window.__relayIps || []; }
+    var humans = [false, true, true, true].map(function (v, s) { return s > 0 && settings['net' + s] === 'human'; });
+    if (!humans.some(Boolean)) { netError('حداقل یک جای انسانی لازم است'); return; }
+    var name = myName(); settings.pname = name; store.set(SKEY, settings);
+    net = { role: 'host', base: base, port: port, ips: ips, code: String(1000 + ((Math.random() * 9000) | 0)), humans: humans,
+      clients: {}, ai: {}, names: [name, AI_NAMES[1], AI_NAMES[2], AI_NAMES[3]], started: false, wait: null, evq: [] };
+    netPoll('host', hostMsg, null);
+    net.timer = setInterval(function () {
+      if (!net || !net.started || current !== 'game') return;
+      var l = lostSeats();
+      if (l.length && $('boardMsg').textContent.indexOf('قطع') < 0) boardMsg(NAMES[l[0]] + ' قطع شده است؛ از منو او را به کامپیوتر بدهید');
+    }, 3000);
+    renderNet();
+  }
+  function startNetGame() {
+    if (!net || net.role !== 'host') return;
+    for (var s = 1; s < 4; s++) if (net.humans[s] && !net.clients[s]) return;
+    net.started = true;
+    NAMES = ['شما', net.names[1], net.names[2], net.names[3]];
+    Object.keys(net.clients).forEach(function (k) {
+      netPost(net.clients[k].id, { t: 'start', names: net.names });
+    });
+    newMatch();
+  }
+  async function joinRoom() {
+    netError('');
+    var addr = ($('joinIp').value || '').trim().replace(/^https?:\/\//, '');
+    var code = ($('joinCode').value || '').trim();
+    if (!addr || !code) { netError('آدرس و کد اتاق را وارد کنید'); return; }
+    if (addr.indexOf(':') < 0) addr += ':' + NET_PORT;
+    var name = myName(); settings.pname = name; settings.lastIp = addr.replace(/:\d+$/, ''); store.set(SKEY, settings);
+    var base = 'http://' + addr;
+    $('btnJoin').disabled = true;
+    try {
+      var ctl = new AbortController(); var tm = setTimeout(function () { ctl.abort(); }, 5000);
+      var r = await fetch(base + '/ping', { signal: ctl.signal }); clearTimeout(tm);
+      if ((await r.text()) !== 'hokm-relay') throw new Error('bad');
+    } catch (e) {
+      $('btnJoin').disabled = false;
+      netError('به این آدرس وصل نشد. مطمئن شوید هر دو گوشی روی یک Wi‑Fi هستند و آدرس درست است.');
+      return;
+    }
+    $('btnJoin').disabled = false;
+    net = { role: 'client', base: base, id: randId(), evq: [], started: false };
+    netPoll(net.id, clientMsg, function () {
+      if (!net || net.role !== 'client') return;
+      if (current === 'game') boardMsg('ارتباط با میزبان قطع شد'); else { netClose(false); netError('ارتباط با میزبان قطع شد'); renderNet(); }
+    });
+    netPost('host', { t: 'join', id: net.id, name: name, code: code });
+    net.timer = setInterval(function () { if (net && net.role === 'client') netPost('host', { t: 'ping', id: net.id }); }, 4000);
+    var n0 = net;
+    setTimeout(function () { if (net === n0 && n0.seat === undefined) { netClose(false); netError('میزبان جواب نداد'); renderNet(); } }, 7000);
+    renderNet();
+  }
+  $('btnNet').addEventListener('click', function () { returnTo = 'home'; netMode = ''; netError(''); $('netName').value = settings.pname || ''; $('joinIp').value = settings.lastIp || ''; show('net'); });
+  $('btnHostMode').addEventListener('click', function () { netMode = 'host'; syncNetSeats(); renderNet(); });
+  $('btnJoinMode').addEventListener('click', function () { netMode = 'join'; renderNet(); });
+  $('btnCreate').addEventListener('click', createRoom);
+  $('btnStartNet').addEventListener('click', startNetGame);
+  $('btnJoin').addEventListener('click', joinRoom);
+  $('netSeats').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-val]'); if (!b) return;
+    settings['net' + b.parentNode.getAttribute('data-seat')] = b.getAttribute('data-val');
+    store.set(SKEY, settings); syncNetSeats();
+  });
+  function syncNetSeats() {
+    document.querySelectorAll('#netSeats .seg').forEach(function (seg) {
+      var s = seg.getAttribute('data-seat');
+      seg.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-val') === settings['net' + s])); });
+    });
+  }
+
   $('btnNew').addEventListener('click', newMatch);
   $('btnContinue').addEventListener('click', continueMatch);
 
   /* ---------- in-game menu & last trick ---------- */
-  function openMenu() { setPaused(true); $('menuOverlay').hidden = false; }
+  function openMenu() {
+    $('menuNew').hidden = !!net;
+    $('menuToAi').hidden = !(net && net.role === 'host');
+    setPaused(true); $('menuOverlay').hidden = false; }
   function closeMenu() { $('menuOverlay').hidden = true; setPaused(false); }
   $('btnMenu').addEventListener('click', openMenu);
   $('menuOverlay').addEventListener('click', function (e) {
@@ -1238,7 +1778,13 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
     if (a === 'resume') closeMenu();
     else if (a === 'settings' || a === 'rules') { $('menuOverlay').hidden = true; returnTo = 'game'; show(a); }
     else if (a === 'new') { closeMenu(); newMatch(); }
-    else if (a === 'home') { stopGame(); show('home'); }
+    else if (a === 'home') { leaveGame(); }
+    else if (a === 'toai') {
+      var l = lostSeats();
+      closeMenu();
+      if (!l.length) boardMsg('همهٔ بازیکن‌ها وصل‌اند');
+      else { l.forEach(seatToAI); boardMsg('کامپیوتر جای بازیکن قطع‌شده بازی می‌کند'); }
+    }
   });
   $('btnLast').addEventListener('click', function () {
     var lt = game && game.tricks.length ? game.tricks[game.tricks.length - 1] : null;
@@ -1261,7 +1807,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
   window.hokmBack = function () {
     if (!$('lastOverlay').hidden) { closeLast(); return true; }
     if (!$('menuOverlay').hidden) { closeMenu(); return true; }
-    if (current === 'settings' || current === 'rules') { goBack(); return true; }
+    if (current === 'settings' || current === 'rules' || current === 'net') { goBack(); return true; }
     if (current === 'game') {
       if (!$('hokmOverlay').hidden || !$('resultOverlay').hidden) return true;
       openMenu(); return true;

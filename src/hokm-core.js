@@ -812,7 +812,46 @@
     return g;
   };
 
+
+  /* ---------- network views: what one human may see, with their own seat rotated to 0 ---------- */
+  // Seat s of the real game is seat (s - k) & 3 in k's view. For odd k the teams swap, so "us" is always team 0.
+  function rotSeat(s, k) { return s < 0 ? s : (s - k + 4) & 3; }
+  function rotTeam(t, k) { return (k & 1) ? 1 - t : t; }
+  function rotPair(a, k) { return (k & 1) ? [a[1], a[0]] : a.slice(); }
+  function rotTrick(t, k) { return t ? { cards: t.cards.slice(), seats: t.seats.map(function (s) { return rotSeat(s, k); }), winner: rotSeat(t.winner, k) } : t; }
+  function rotRound(r, k) {
+    if (!r) return r;
+    return Object.assign({}, r, { winTeam: rotTeam(r.winTeam, k), tricks: rotPair(r.tricks, k), hakem: rotSeat(r.hakem, k), nextHakem: rotSeat(r.nextHakem, k) });
+  }
+  function hideHand(h) { return h.map(function () { return -1; }); }
+  function viewFor(game, k) {
+    var o = {
+      v: 1, settings: game.settings, seed: 0, scores: rotPair(game.scores, k), hakem: rotSeat(game.hakem, k),
+      phase: game.phase, roundNo: game.roundNo, hands: null, five: null, history: [],
+      tricks: game.tricks.map(function (t) { return rotTrick(t, k); }), st: null
+    };
+    if (game.hands) {
+      o.hands = [0, 1, 2, 3].map(function (d) {
+        var real = game.hands[(d + k) & 3];
+        if (d !== 0) return hideHand(real);
+        return game.phase === 'chooseHokm' ? real.map(function (c, i) { return i < 5 ? c : -1; }) : real.slice();
+      });
+    }
+    var st = game.st;
+    if (st) {
+      o.st = {
+        hands: [0, 1, 2, 3].map(function (d) { var r = st.hands[(d + k) & 3]; return d === 0 ? r.slice() : hideHand(r); }),
+        hokm: st.hokm, hakem: rotSeat(st.hakem, k), leader: rotSeat(st.leader, k), turn: rotSeat(st.turn, k),
+        trick: st.trick.slice(), trickSeats: st.trickSeats.map(function (s) { return rotSeat(s, k); }),
+        tricks: rotPair(st.tricks, k), played: [], voids: [[], [], [], []],
+        over: st.over, winTeam: st.winTeam < 0 ? st.winTeam : rotTeam(st.winTeam, k), tricksPlayed: st.tricksPlayed
+      };
+    }
+    return o;
+  }
+
   return {
+    rotSeat: rotSeat, rotTeam: rotTeam, rotRound: rotRound, rotTrick: rotTrick, viewFor: viewFor,
     SUIT_SYM: SUIT_SYM, SUIT_FA: SUIT_FA, RANK_LABEL: RANK_LABEL, MODE_FA: MODE_FA, DEFAULTS: DEFAULTS,
     suitOf: suitOf, rankOf: rankOf, teamOf: teamOf, partnerOf: partnerOf, strength: strength,
     cardLabel: cardLabel, hokmLabel: hokmLabel, makeRng: makeRng, shuffle: shuffle, fullDeck: fullDeck,

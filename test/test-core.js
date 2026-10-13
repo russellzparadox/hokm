@@ -224,4 +224,31 @@ t('failing to win as 4th hand caps that suit', () => {
   assert.strictEqual(st.capH[3][2], H.strength(C('Q♣'), 'suit'));
 });
 
+t('network view rotates seats, swaps teams for odd seats and hides other hands', () => {
+  const g = new H.HokmGame({ difficulty: 'easy' }, 7);
+  g.startRound();
+  g.setHokm(g.aiHokm());
+  g.scores = [2, 5];
+  for (let k = 0; k < 4; k++) {
+    const v = H.viewFor(g, k);
+    assert.deepStrictEqual(v.scores, k & 1 ? [5, 2] : [2, 5]);
+    assert.strictEqual(v.hakem, (g.hakem - k + 4) & 3);
+    assert.deepStrictEqual(v.st.hands[0], g.st.hands[k]);
+    for (let d = 1; d < 4; d++) {
+      assert.strictEqual(v.st.hands[d].length, g.st.hands[(d + k) & 3].length);
+      assert.ok(v.st.hands[d].every((c) => c === -1));
+    }
+    assert.strictEqual(v.st.turn, (g.st.turn - k + 4) & 3);
+    const m = H.HokmGame.fromJSON(JSON.parse(JSON.stringify(v)));
+    if (g.st.turn === k) assert.deepStrictEqual(m.legal(0), g.legal(k));
+  }
+});
+t('network view during hokm choice only shows your first five cards', () => {
+  const g = new H.HokmGame({ difficulty: 'easy' }, 3);
+  g.startRound();
+  const v = H.viewFor(g, 2);
+  assert.strictEqual(v.hands[0].filter((c) => c >= 0).length, 5);
+  assert.deepStrictEqual(v.hands[0].slice(0, 5), g.hands[2].slice(0, 5));
+});
+
 console.log(`rules: ${pass} tests passed`);
