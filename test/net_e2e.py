@@ -7,6 +7,7 @@ URL = 'file:///home/claude/hokm/android/app/src/main/assets/index.html'
 PORT = 8791
 GUESTS = int(sys.argv[1]) if len(sys.argv) > 1 else 1
 ROUNDS = int(sys.argv[2]) if len(sys.argv) > 2 else 3
+RELOAD = len(sys.argv) > 3 and sys.argv[3] == 'reload'   # drop and reopen the first guest mid-game
 OUT = '/tmp/claude-0/th'
 
 STATE = """() => ({
@@ -51,10 +52,17 @@ async def main():
         await host.screenshot(path=f'{OUT}/net-lobby-host.png')
         await host.click('#btnStartNet')
         results = 0
+        reloaded = False
         t0 = time.time()
         shot = False
         while results < ROUNDS and time.time() - t0 < 240:
             await asyncio.sleep(0.25)
+            if RELOAD and not reloaded and time.time() - t0 > 12:
+                reloaded = True
+                await pages[1].reload()
+                await asyncio.sleep(0.5)
+                await pages[1].click('#btnRejoin')
+                print('guest reloaded and rejoined')
             for i, pg in enumerate(pages):
                 st = await pg.evaluate(STATE)
                 if st['hokm']:

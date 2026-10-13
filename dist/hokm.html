@@ -442,6 +442,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
     <div class="actions">
       <p class="note" id="homeNote" hidden></p>
       <button class="btn primary" id="btnNew" type="button">بازی جدید</button>
+      <button class="btn ghost" id="btnRejoin" type="button" hidden>اتصال دوباره به بازی شبکه‌ای</button>
       <button class="btn soft" id="btnNet" type="button">بازی شبکه‌ای (۲ تا ۴ نفره)</button>
       <button class="btn ghost" id="btnContinue" type="button" hidden>ادامهٔ بازی قبلی</button>
       <div class="row">
@@ -1660,6 +1661,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
   }
   function refreshHome() {
     var saved = store.get(GKEY);
+    $('btnRejoin').hidden = !store.get(NKEY) || !!net;
     $('btnContinue').hidden = !(saved && saved.phase && saved.phase !== 'matchOver');
     syncControls();
   }
@@ -2278,7 +2280,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
   function stopGame() {
     runId++;
     pendingPick = null; hokmResolve = null; resultResolve = null; selected = -1;
-    if (net) { net.evq = []; net.draining = false; net.pendingNext = false; }
+    if (net) { net.evq = []; net.draining = false; net.pendingNext = false; net.gen = (net.gen || 0) + 1; }
     fxReset();
     setPaused(false);
     ['hokmOverlay', 'resultOverlay', 'menuOverlay', 'lastOverlay'].forEach(function (o) { $(o).hidden = true; });
@@ -2330,18 +2332,19 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
       return go();
     });
   }
-  function netPoll(mine, onMsg, onLost) {
-    var n = net, after = 0, fails = 0;
+  function netPoll(mine, onMsg, onLost, onBack) {
+    var n = net, after = 0, fails = 0, lost = false;
     (async function loop() {
       while (net === n && !n.closed) {
         try {
           var r = await fetch(n.base + '/recv?id=' + encodeURIComponent(mine) + '&after=' + after);
           var j = await r.json();
+          if (lost && onBack) { lost = false; onBack(); }
           fails = 0; after = j.next;
           j.msgs.forEach(function (m) { try { onMsg(JSON.parse(m)); } catch (e) { console.error(e); } });
         } catch (e) {
           fails++;
-          if (fails === 6 && onLost) onLost();
+          if (fails === 6) { lost = true; if (onLost) onLost(); }
           await new Promise(function (res) { setTimeout(res, Math.min(2000, 250 * fails)); });
         }
       }
@@ -2349,6 +2352,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
   }
   function netClose(notify) {
     if (!net) return;
+    if (net.role === 'client' && (notify || net.forget)) store.del(NKEY);
     var n = net;
     if (notify) {
       try {
@@ -2397,6 +2401,22 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
   }
   function hostMsg(m) {
     if (!net || net.role !== 'host') return;
+    if (m.t === 'rejoin') {
+      if (m.code !== net.code) { netPost(m.id, { t: 'reject', why: 'کد اتاق درست نیست' }); return; }
+      var rs = -1;
+      Object.keys(net.clients).forEach(function (k) { if (net.clients[k].token === m.token) rs = +k; });
+      if (rs < 0) { netPost(m.id, { t: 'reject', why: 'این بازی دیگر وجود ندارد' }); return; }
+      var rc = net.clients[rs];
+      rc.id = m.id; rc.last = Date.now(); net.ai[rs] = false;
+      netPost(m.id, Object.assign({ t: 'lobby', seat: rs }, lobbyInfo()));
+      if (net.started) {
+        netPost(m.id, { t: 'start', names: net.names });
+        var ask = net.wait && net.wait.seat === rs ? net.wait.kind : null;
+        bcast({ e: 'sync', ask: ask }, rs);
+        if (current === 'game') boardMsg(rc.name + ' دوباره وصل شد');
+      }
+      return;
+    }
     if (m.t === 'join') {
       if (m.code !== net.code) { netPost(m.id, { t: 'reject', why: 'کد اتاق درست نیست' }); return; }
       var known = Object.keys(net.clients).filter(function (k) { return net.clients[k].id === m.id; })[0];
@@ -2405,7 +2425,7 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
       var seat = -1;
       for (var s = 1; s < 4; s++) if (net.humans[s] && !net.clients[s]) { seat = s; break; }
       if (seat < 0) { netPost(m.id, { t: 'reject', why: 'اتاق پر است' }); return; }
-      net.clients[seat] = { id: m.id, name: (m.name || 'بازیکن').slice(0, 12), last: Date.now() };
+      net.clients[seat] = { id: m.id, token: m.token || m.id, name: (m.name || 'بازیکن').slice(0, 12), last: Date.now() };
       net.names[seat] = net.clients[seat].name;
       netLobbyChanged();
       return;
@@ -2438,17 +2458,19 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
     if (m.t === 'lobby') {
       net.seat = m.seat; net.names = m.names; net.humans = m.humans; net.joined = m.joined;
       net.last = Date.now();
+      if (current === 'home') { netMode = ''; show('net'); }
       renderLobby();
     } else if (m.t === 'reject') {
-      var why = m.why; netClose(false); netError(why); renderNet();
+      var why = m.why; if (net) net.forget = true; netClose(false); netError(why); alertMsg(why); renderNet();
     } else if (m.t === 'start') {
       net.started = true; net.evq = []; net.names = m.names;
       setNames(net.names, net.seat);
       stopGame(); game = null;
       show('game'); clearBoard(); boardMsg('بازی شروع می‌شود…'); renderScore(); renderChip(); renderSeats(-1); handEl.innerHTML = '';
     } else if (m.t === 'end') {
-      var why2 = m.why; netClose(false); stopGame(); show('home'); alertMsg(why2 || 'بازی تمام شد');
+      var why2 = m.why; if (net) net.forget = true; netClose(false); stopGame(); show('home'); alertMsg(why2 || 'بازی تمام شد');
     } else if (m.t === 'ev') {
+      if (m.e === 'sync') { stopGame(); }
       if (m.e === 'next' || m.e === 'reset') {
         if (resultResolve) { var r = resultResolve; resultResolve = null; r('next'); } else net.pendingNext = true;
       }
@@ -2459,12 +2481,13 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
   async function drain() {
     var n = net;
     if (!n || n.draining) return;
+    var gen = n.gen;
     n.draining = true;
-    while (net === n && n.evq.length) {
+    while (net === n && n.gen === gen && n.evq.length) {
       var ev = n.evq.shift();
       try { await clientEv(ev, runId); } catch (e) { if (e !== CANCEL) console.error(e); }
     }
-    n.draining = false;
+    if (n.gen === gen) n.draining = false;
   }
   async function clientEv(ev, id) {
     var m = net.seat, R = function (s) { return H.rotSeat(s, m); };
@@ -2495,15 +2518,30 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
       var r = ev.res;
       var res = { winner: R(r.winner), trickDone: r.trickDone, roundOver: H.rotRound(r.roundOver, m), matchOver: r.matchOver };
       await presentPlay(R(ev.p), ev.card, ev.fx, res, id);
+    } else if (ev.e === 'sync') {
+      id = runId;
+      show('game'); clearBoard(); boardMsg('');
+      renderScore(); renderChip(); renderSeats(game.st ? game.st.turn : -1);
+      handEl.innerHTML = '';
+      if (game.phase === 'play') { renderTrick(); renderHand(); }
+      else if (game.phase === 'chooseHokm') presentHokmWait(id);
+      if (ev.ask === 'card') {
+        var c2 = await humanPick(id);
+        var b2 = handEl.querySelector('.card[data-c="' + c2 + '"]'); if (b2) b2.style.visibility = 'hidden';
+        netPost('host', { t: 'card', id: net.id, c: c2 });
+      } else if (ev.ask === 'hokm') {
+        var h2 = await humanHokm(id);
+        netPost('host', { t: 'hokm', id: net.id, h: h2 });
+      }
     } else if (ev.e === 'reset') {
       stopGame_keepNet(); game = null;
       clearBoard(); boardMsg('دور تازه…'); renderScore(); renderChip(); renderSeats(-1); handEl.innerHTML = '';
     }
   }
   function stopGame_keepNet() {
-    var q = net.evq, d = net.draining;
+    var q = net.evq, d = net.draining, g = net.gen;
     stopGame();
-    net.evq = q; net.draining = d;
+    net.evq = q; net.draining = d; net.gen = g;
   }
   function alertMsg(t) { var el = $('homeNote'); el.textContent = t; el.hidden = !t; }
 
@@ -2608,17 +2646,44 @@ button:focus-visible { outline: 2px solid var(--turq); outline-offset: 2px; }
       return;
     }
     $('btnJoin').disabled = false;
-    net = { role: 'client', base: base, id: randId(), evq: [], started: false };
-    netPoll(net.id, clientMsg, function () {
-      if (!net || net.role !== 'client') return;
-      if (current === 'game') boardMsg('ارتباط با میزبان قطع شد'); else { netClose(false); netError('ارتباط با میزبان قطع شد'); renderNet(); }
-    });
-    netPost('host', { t: 'join', id: net.id, name: name, code: code });
-    net.timer = setInterval(function () { if (net && net.role === 'client') netPost('host', { t: 'ping', id: net.id }); }, 4000);
-    var n0 = net;
-    setTimeout(function () { if (net === n0 && n0.seat === undefined) { netClose(false); netError('میزبان جواب نداد'); renderNet(); } }, 7000);
+    net = { role: 'client', base: base, id: randId(), evq: [], started: false, addr: addr, code: code, name: name };
+    net.token = net.id;
+    store.set(NKEY, { addr: addr, code: code, name: name, token: net.token });
+    connectClient('join');
     renderNet();
   }
+  var NKEY = 'hokm.net.v1';
+  // Starts polling and says hello to the host ('join' the first time, 'rejoin' when coming back to a running game).
+  function connectClient(kind) {
+    var n0 = net;
+    netPoll(net.id, clientMsg, function () {
+      if (!net || net.role !== 'client') return;
+      if (current === 'game') boardMsg('ارتباط قطع شد؛ دارم دوباره وصل می‌شوم…');
+    }, function () {
+      if (net === n0) netPost('host', { t: 'rejoin', id: n0.id, token: n0.token, code: n0.code, name: n0.name });
+    });
+    netPost('host', { t: kind, id: net.id, token: net.token, code: net.code, name: net.name });
+    net.timer = setInterval(function () { if (net && net.role === 'client') netPost('host', { t: 'ping', id: net.id }); }, 4000);
+    setTimeout(function () {
+      if (net === n0 && n0.seat === undefined) { netClose(false); netError('میزبان جواب نداد'); alertMsg('میزبان جواب نداد'); renderNet(); }
+    }, 7000);
+  }
+  // Coming back after the app was closed or the connection dropped for good.
+  async function rejoinRoom() {
+    var sv = store.get(NKEY);
+    if (!sv) return;
+    alertMsg('');
+    var base = 'http://' + sv.addr;
+    try {
+      var ctl = new AbortController(); var tm = setTimeout(function () { ctl.abort(); }, 5000);
+      var r = await fetch(base + '/ping', { signal: ctl.signal }); clearTimeout(tm);
+      if ((await r.text()) !== 'hokm-relay') throw new Error('bad');
+    } catch (e) { alertMsg('میزبان پیدا نشد؛ مطمئن شوید روی همان Wi‑Fi هستید و میزبان برنامه را باز گذاشته است.'); return; }
+    if (net) netClose(false);
+    net = { role: 'client', base: base, id: randId(), evq: [], started: false, addr: sv.addr, code: sv.code, name: sv.name, token: sv.token };
+    connectClient('rejoin');
+  }
+  $('btnRejoin').addEventListener('click', rejoinRoom);
   $('btnNet').addEventListener('click', function () { returnTo = 'home'; netMode = ''; netError(''); $('netName').value = settings.pname || ''; $('joinIp').value = settings.lastIp || ''; show('net'); });
   $('btnHostMode').addEventListener('click', function () { netMode = 'host'; syncNetSeats(); renderNet(); });
   $('btnJoinMode').addEventListener('click', function () { netMode = 'join'; renderNet(); });
